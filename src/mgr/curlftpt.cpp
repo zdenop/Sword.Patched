@@ -202,6 +202,9 @@ SWLOGD("***** Finished performing curl easy action. \n");
                ) {
 				retVal = -2;
 			}
+			else if (CURLE_REMOTE_ACCESS_DENIED == res) {
+				retVal = -3;
+			}
 			else {
 				retVal = -1;
 			}

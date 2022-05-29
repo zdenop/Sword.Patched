@@ -209,6 +209,8 @@ ENDIF(NOT MSVC)
 # Sources relying on ZLib
 SET(sword_zlib_used_SOURCES
 	src/modules/common/zipcomprs.cpp
+	src/modules/common/ioapi.c
+	src/modules/common/unzip.c
 )
 SET(sword_zlib_nofound_SOURCES
 	src/utilfuns/zlib/adler32.c

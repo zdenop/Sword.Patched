@@ -127,9 +127,30 @@ InstallMgr::~InstallMgr() {
 }
 
 
+void deleteInstallSourceAndChainedSources(InstallSource *is) {
+	if (is) {
+		deleteInstallSourceAndChainedSources(is->chainedSource);
+		delete is;
+	}
+}
+
+
+void addInstallSourceToSources(InstallSourceMap &sources, const char *caption, InstallSource *is, InstallSource *parent = 0) {
+	if (parent) {
+		if (parent->chainedSource) return addInstallSourceToSources(sources, caption, is, parent->chainedSource);
+		parent->chainedSource = is;
+	}
+	else {
+		InstallSource *exists = sources[caption];
+		if (exists) return addInstallSourceToSources(sources, caption, is, exists);
+		sources[caption] = is;
+	}
+}
+
+
 void InstallMgr::clearSources() {
 	for (InstallSourceMap::iterator it = sources.begin(); it != sources.end(); ++it) {
-		delete it->second;
+		deleteInstallSourceAndChainedSources(it->second);
 	}
 	sources.clear();
 }
@@ -154,12 +175,25 @@ void InstallMgr::readInstallConf() {
 
 	if (confSection != installConf->getSections().end()) {
 
+		sourceBegin = confSection->second.lower_bound("HTTPSPackagePreference");
+		sourceEnd   = confSection->second.upper_bound("HTTPSPackagePreference");
+
+		while (sourceBegin != sourceEnd) {
+			InstallSource *is = new InstallSource("HTTPS", sourceBegin->second.c_str());
+			is->packagePreference = true;
+			addInstallSourceToSources(sources, is->caption, is);
+			SWBuf parent = (SWBuf)privatePath + "/" + is->uid + "/file";
+			FileMgr::createParent(parent.c_str());
+			is->localShadow = (SWBuf)privatePath + "/" + is->uid;
+			sourceBegin++;
+		}
+
 		sourceBegin = confSection->second.lower_bound("FTPSource");
 		sourceEnd = confSection->second.upper_bound("FTPSource");
 
 		while (sourceBegin != sourceEnd) {
 			InstallSource *is = new InstallSource("FTP", sourceBegin->second.c_str());
-			sources[is->caption] = is;
+			addInstallSourceToSources(sources, is->caption, is);
 			SWBuf parent = (SWBuf)privatePath + "/" + is->uid + "/file";
 			FileMgr::createParent(parent.c_str());
 			is->localShadow = (SWBuf)privatePath + "/" + is->uid;
@@ -172,7 +206,7 @@ void InstallMgr::readInstallConf() {
 
 		while (sourceBegin != sourceEnd) {
 			InstallSource *is = new InstallSource("SFTP", sourceBegin->second.c_str());
-			sources[is->caption] = is;
+			addInstallSourceToSources(sources, is->caption, is);
 			SWBuf parent = (SWBuf)privatePath + "/" + is->uid + "/file";
 			FileMgr::createParent(parent.c_str());
 			is->localShadow = (SWBuf)privatePath + "/" + is->uid;
@@ -185,7 +219,7 @@ void InstallMgr::readInstallConf() {
 
 		while (sourceBegin != sourceEnd) {
 			InstallSource *is = new InstallSource("HTTP", sourceBegin->second.c_str());
-			sources[is->caption] = is;
+			addInstallSourceToSources(sources, is->caption, is);
 			SWBuf parent = (SWBuf)privatePath + "/" + is->uid + "/file";
 			FileMgr::createParent(parent.c_str());
 			is->localShadow = (SWBuf)privatePath + "/" + is->uid;
@@ -197,7 +231,7 @@ void InstallMgr::readInstallConf() {
 
 		while (sourceBegin != sourceEnd) {
 			InstallSource *is = new InstallSource("HTTPS", sourceBegin->second.c_str());
-			sources[is->caption] = is;
+			addInstallSourceToSources(sources, is->caption, is);
 			SWBuf parent = (SWBuf)privatePath + "/" + is->uid + "/file";
 			FileMgr::createParent(parent.c_str());
 			is->localShadow = (SWBuf)privatePath + "/" + is->uid;
@@ -224,8 +258,11 @@ void InstallMgr::saveInstallConf() {
 	installConf->getSection("Sources").clear();
 
 	for (InstallSourceMap::iterator it = sources.begin(); it != sources.end(); ++it) {
-		if (it->second) {
-			installConf->getSection("Sources").insert(ConfigEntMap::value_type(it->second->type + "Source", it->second->getConfEnt().c_str()));
+		 for (InstallSource *is = it->second; is; is = is->chainedSource) {
+			SWBuf sourceType = is->type;
+			if (is->packagePreference) sourceType += "PackagePreference";
+			else sourceType += "Source";
+			installConf->getSection("Sources").insert(ConfigEntMap::value_type(sourceType, is->getConfEnt().c_str()));
 		}
 	}
 	(*installConf)["General"]["PassiveFTP"] = (isFTPPassive()) ? "true" : "false";
@@ -318,6 +355,11 @@ SWLOGD("remoteCopy: %s, %s, %s, %c, %s", (is?is->source.c_str():"null"), src, (d
 	else if (is->type == "HTTP" || is->type == "HTTPS") {
 		trans = createHTTPTransport(is->source, statusReporter);
 	}
+
+	// if no transport, then requested transport not available
+	if (!trans) return -9;
+
+
 	transport = trans; // set classwide current transport for other thread terminate() call
 	if (is->u.length()) {
 		trans->setUser(is->u);
@@ -411,6 +453,11 @@ SWLOGD("***** fromLocation: %s \n", fromLocation);
 	}
 SWLOGD("***** modName: %s \n", modName);
 
+	InstallSource *packagePreference = 0;
+	if (is->packagePreference && is->chainedSource) {
+		packagePreference = is;
+		is = is->chainedSource;
+	}
 	if (is) {
 		sourceDir = (SWBuf)privatePath + "/" + is->uid;
 		sourceUID = is->uid;
@@ -428,12 +475,33 @@ SWLOGD("***** modName: %s \n", modName);
 	if (module != mgr.config->getSections().end()) {
 	
 		entry = module->second.find("CipherKey");
-		if (entry != module->second.end())
+		if (entry != module->second.end()) {
 			cipher = true;
+		}
+
+		// root of where to install or cache install during download
+		SWBuf destRoot = mgr.prefixPath;
+		entry = module->second.find("PrefixPath");
+		if (entry != module->second.end()) {
+			destRoot = entry->second.c_str();
+		}
+
+		// module data files path
+		SWBuf absolutePath = "";
+		// module data files path relative to the destination root
+		SWBuf relativePath = "";
+		entry = module->second.find("AbsoluteDataPath");
+		if (entry != module->second.end()) {
+			absolutePath = entry->second.c_str();
+			relativePath = absolutePath;
+			relativePath << destRoot.length();
+		}
+
 		
-		//
+		// =====================================================================
 		// This first check is a method to allow a module to specify each
 		// file that needs to be copied
+		// This is practically never used today and probably needs to be removed
 		//
 		fileEnd = module->second.upper_bound("File");
 		fileBegin = module->second.lower_bound("File");
@@ -477,47 +545,81 @@ SWLOGD("***** modName: %s \n", modName);
 			}
 		}
 
-		// This is the REAL install code, the above code I don't think has
-		// ever been used
-		//
-		// Copy all files in DataPath directory
-		// 
-		else {
-			ConfigEntMap::iterator entry;
+		// ========== END OF FILES SPECIFIED IN MOD.CONF FILE CODE WHICH IS LIKELY NEVER USED ============
+		// the above code I don't think has ever been used
 
-			entry = module->second.find("AbsoluteDataPath");
-			if (entry != module->second.end()) {
-				SWBuf absolutePath = entry->second.c_str();
-				SWBuf relativePath = absolutePath;
-				entry = module->second.find("PrefixPath");
-				if (entry != module->second.end()) {
-					relativePath << strlen(entry->second.c_str());
+
+		//
+		// This is the REAL install code
+		//
+
+		else {
+			// if we're copying remotely instead of locally
+			if (is) {
+				
+				//
+				// First try to see if a single archive exists
+				//
+				SWBuf relativeArchivePath = "packages/";
+			       	relativeArchivePath += modName;
+			       	relativeArchivePath += ".zip";
+				SWBuf absoluteArchivePath = destRoot + relativeArchivePath;
+
+SWLOGD("***** installModule: trying to get archive cache: %s \n", relativeArchivePath.c_str());
+				int errorCode = -999;
+				
+				// first see if we have a packagePreference
+				if (packagePreference) {
+					errorCode = remoteCopy(packagePreference, relativeArchivePath.c_str(), absoluteArchivePath.c_str(), false);
+					if (errorCode == -1) aborted = true;	// user aborted
 				}
-				else {
-					relativePath << strlen(mgr.prefixPath);
+				
+				// if we just tried a packagePreference source, then skip on to our chained source and try again
+				if (errorCode && !aborted) {
+					errorCode = remoteCopy(is, relativeArchivePath.c_str(), absoluteArchivePath.c_str(), false);
+					if (errorCode == -1) aborted = true;	// user aborted
 				}
+
+				if (!errorCode) {
+					errorCode = ZipCompress::unZip(absoluteArchivePath.c_str() , destRoot.c_str());
+					FileMgr::removeFile(absoluteArchivePath.c_str());
+					
+				}
+
+				//
+				// No single archive exists so we'll continue
+				//
+				// Copy all files in DataPath directory if we found it for the module
+				// 
+
 SWLOGD("***** mgr.prefixPath: %s \n", mgr.prefixPath);
 SWLOGD("***** destMgr->prefixPath: %s \n", destMgr->prefixPath);
 SWLOGD("***** absolutePath: %s \n", absolutePath.c_str());
 SWLOGD("***** relativePath: %s \n", relativePath.c_str());
 
-				if (is) {
-					if (remoteCopy(is, relativePath.c_str(), absolutePath.c_str(), true)) {
-						aborted = true;	// user aborted
-					}
+				while (errorCode && !aborted && absolutePath.length() && relativePath.length()) {
+					errorCode = remoteCopy(is, relativePath.c_str(), absolutePath.c_str(), true);
+					if (errorCode == -1) aborted = true;	// user aborted
+					// if we have another transport method to try for the source, let's try
+					if (is->chainedSource) is = is->chainedSource;
+					else break;
 				}
-				if (!aborted) {
-					SWBuf destPath = (SWBuf)destMgr->prefixPath + relativePath;
-					retVal = FileMgr::copyDir(absolutePath.c_str(), destPath.c_str());
-				}
-				if (is) {		// delete tmp netCopied files
-//					mgr->deleteModule(modName);
-					FileMgr::removeDir(absolutePath.c_str());
-				}
+				if (errorCode) aborted = true; // we've failed to transfer to the module
 			}
 		}
-		// find and copy the .conf file
+
+
 		if (!aborted) {
+			// copy the tmp netCopied files (or local files) to real destination
+			SWBuf destPath = (SWBuf)destMgr->prefixPath + relativePath;
+			retVal = FileMgr::copyDir(absolutePath.c_str(), destPath.c_str());
+
+			if (is) {		// delete tmp netCopied files
+//				mgr->deleteModule(modName);
+				FileMgr::removeDir(absolutePath.c_str());
+			}
+
+			// find and copy the .conf file
 			SWBuf confDir = sourceDir + "mods.d/";
 			std::vector<DirEntry> dirList = FileMgr::getDirList(confDir);
 			for (unsigned int i = 0; i < dirList.size() && !retVal; ++i) {
@@ -567,6 +669,14 @@ int InstallMgr::refreshRemoteSource(InstallSource *is) {
 	// assert user disclaimer has been confirmed
 	if (!isUserDisclaimerConfirmed()) return -1;
 
+	InstallSource *packagePreference = 0;
+	SWBuf packagePreferenceRoot = "";
+	// check if we're just a packagePreference
+	if (is->packagePreference && is->chainedSource) {
+		packagePreference = is;
+		packagePreferenceRoot = (SWBuf)privatePath + (SWBuf)"/" + packagePreference->uid.c_str();
+		is = is->chainedSource;
+	}
 	SWBuf root = (SWBuf)privatePath + (SWBuf)"/" + is->uid.c_str();
 	removeTrailingSlash(root);
 	SWBuf target = root + "/mods.d";
@@ -580,11 +690,24 @@ int InstallMgr::refreshRemoteSource(InstallSource *is) {
 #ifndef EXCLUDEZLIB
 	SWBuf archive = root + "/mods.d.tar.gz";
 
-	errorCode = remoteCopy(is, "mods.d.tar.gz", archive.c_str(), false);
+	// first try refreshing from the package preference
+	if (packagePreference) {
+		errorCode = remoteCopy(packagePreference, "mods.d.tar.gz", archive.c_str(), false);
+	}
+	if (errorCode) {
+		// packagePreference failed so let's move on as if we didn't have a packagePreference
+		packagePreference = 0;
+		errorCode = remoteCopy(is, "mods.d.tar.gz", archive.c_str(), false);
+	}
 	if (!errorCode) { //sucessfully downloaded the tar,gz of module configs
 		int fd = FileMgr::openFileReadOnly(archive.c_str());
 		ZipCompress::unTarGZ(fd, root.c_str());
 		FileMgr::closeFile(fd);
+		if (packagePreference) {
+			int fd = FileMgr::openFileReadOnly(archive.c_str());
+			ZipCompress::unTarGZ(fd, packagePreferenceRoot.c_str());
+			FileMgr::closeFile(fd);
+		}
 	}
 	else if (errorCode > -2)	// don't try the next attempt on connection error or user requested termination
 #endif
@@ -665,10 +788,16 @@ int InstallMgr::refreshRemoteSourceConfiguration() {
 	SWBuf root = (SWBuf)privatePath;
 	removeTrailingSlash(root);
 	SWBuf masterRepoListPath = root + "/" + masterRepoList;
-	InstallSource is("FTP");
-	is.source = "ftp.crosswire.org";
-	is.directory = "/pub/sword";
+	InstallSource is("HTTPS");
+	is.source = "crosswire.org";
+	is.directory = "/ftpmirror/pub/sword";
 	int errorCode = remoteCopy(&is, masterRepoList, masterRepoListPath.c_str(), false);
+	if (errorCode) {
+		InstallSource is("FTP");
+		is.source = "ftp.crosswire.org";
+		is.directory = "/pub/sword";
+		errorCode = remoteCopy(&is, masterRepoList, masterRepoListPath.c_str(), false);
+	}
 	if (!errorCode) { //sucessfully downloaded the repo list
 		SWConfig masterList(masterRepoListPath);
 		SectionMap::iterator sections = masterList.getSections().find("Repos");
@@ -706,11 +835,15 @@ int InstallMgr::refreshRemoteSourceConfiguration() {
 				// didn't find our UID, let's add it
 				if (it == sources.end()) {
 					SWBuf key = actions->second.stripPrefix('=');
-					if (key == "FTPSource") {
+					SWBuf sourceType = key;
+					if (sourceType.endsWith("Source")) sourceType.setSize(sourceType.length() - 6);
+					else if (sourceType.endsWith("PackagePreference")) sourceType.setSize(sourceType.length() - 17);
+					if (sourceType != key) {
 						if (actions->second != "REMOVE") {
-							InstallSource *is = new InstallSource("FTP", actions->second.c_str());
+							InstallSource *is = new InstallSource(sourceType, actions->second.c_str());
+							if (key.endsWith("PackagePreference")) is->packagePreference = true;
 							is->uid = actions->first;
-							sources[is->caption] = is;
+							addInstallSourceToSources(sources, is->caption, is);
 						}
 					}
 				}
@@ -727,7 +860,7 @@ int InstallMgr::refreshRemoteSourceConfiguration() {
 }
 
 
-InstallSource::InstallSource(const char *type, const char *confEnt) {
+InstallSource::InstallSource(const char *type, const char *confEnt) : chainedSource(0), packagePreference(false) {
 	this->type = type;
 	mgr = 0;
 	userData = 0;

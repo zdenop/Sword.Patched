@@ -7,6 +7,8 @@ libsword_la_SOURCES += $(commondir)/lzsscomprs.cpp
 
 if HAVE_LIBZ
 libsword_la_SOURCES += $(commondir)/zipcomprs.cpp
+libsword_la_SOURCES += $(commondir)/unzip.c
+libsword_la_SOURCES += $(commondir)/ioapi.c
 endif
 
 if HAVE_BZIP2

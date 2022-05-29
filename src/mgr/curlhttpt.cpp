@@ -177,6 +177,9 @@ SWLOGD("***** Finished performing curl easy action. \n");
                ) {
 				retVal = -2;
 			}
+			else if (CURLE_HTTP_RETURNED_ERROR == res) {
+				retVal = -3;
+			}
 			else {
 				retVal = -1;
 			}

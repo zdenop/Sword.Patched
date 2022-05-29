@@ -42,6 +42,7 @@ public:
 	virtual void decode(void);
 
 	static char unTarGZ(int fd, const char *destPath);
+	static char unZip(const char *sourceZipPath, const char *destPath);
 };
 
 SWORD_NAMESPACE_END
