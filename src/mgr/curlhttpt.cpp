@@ -61,13 +61,22 @@ namespace {
 		return (int)FileMgr::write(out->fd, buffer, size * nmemb);
 	}
 
+	struct MyProgressData {
+		StatusReporter *sr;
+		bool *term;
+	};
 
 	static int my_httpfprogress(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow) {
 		if (clientp) {
-			if (dltotal < 0) dltotal = 0;
-			if (dlnow < 0) dlnow = 0;
-			if (dlnow > dltotal) dlnow = dltotal;
-			((StatusReporter *)clientp)->update(dltotal, dlnow);
+			MyProgressData *pd = (MyProgressData *)clientp;
+SWLOGD("CURLFTPTransport report progress: totalSize: %ld; xfered: %ld\n", (long)dltotal, (long)dlnow);
+			if (pd->sr) {
+				if (dltotal < 0) dltotal = 0;
+				if (dlnow < 0) dlnow = 0;
+				if (dlnow > dltotal) dlnow = dltotal;
+				pd->sr->update(dltotal, dlnow);
+			}
+			if (*(pd->term)) return 1;
 		}
 		return 0;
 	}
@@ -119,6 +128,11 @@ char CURLHTTPTransport::getURL(const char *destPath, const char *sourceURL, SWBu
 	CURLcode res;
 
 	if (session) {
+
+		struct MyProgressData pd;
+		pd.sr = statusReporter;
+		pd.term = &term;
+
 		curl_easy_setopt(session, CURLOPT_URL, sourceURL);
 
 		SWBuf credentials = u + ":" + p;
@@ -127,9 +141,10 @@ char CURLHTTPTransport::getURL(const char *destPath, const char *sourceURL, SWBu
 		if (!passive)
 			curl_easy_setopt(session, CURLOPT_FTPPORT, "-");
 		curl_easy_setopt(session, CURLOPT_NOPROGRESS, 0);
-		curl_easy_setopt(session, CURLOPT_FAILONERROR, 1);
-		curl_easy_setopt(session, CURLOPT_PROGRESSDATA, statusReporter);
+		curl_easy_setopt(session, CURLOPT_PROGRESSDATA, &pd);
+		curl_easy_setopt(session, CURLOPT_FAILONERROR, 1L);
 		curl_easy_setopt(session, CURLOPT_PROGRESSFUNCTION, my_httpfprogress);
+
 		curl_easy_setopt(session, CURLOPT_DEBUGFUNCTION, myhttp_trace);
 		/* Set a pointer to our struct to pass to the callback */
 		curl_easy_setopt(session, CURLOPT_FILE, &ftpfile);
@@ -138,10 +153,8 @@ char CURLHTTPTransport::getURL(const char *destPath, const char *sourceURL, SWBu
 		curl_easy_setopt(session, CURLOPT_VERBOSE, true);
 #ifndef OLDCURL
 		curl_easy_setopt(session, CURLOPT_CONNECTTIMEOUT_MS, timeoutMillis);
-		curl_easy_setopt(session, CURLOPT_TIMEOUT_MS, timeoutMillis);
 #else
 		curl_easy_setopt(session, CURLOPT_CONNECTTIMEOUT, timeoutMillis/1000);
-		curl_easy_setopt(session, CURLOPT_TIMEOUT, timeoutMillis/1000);
 #endif
 
 		/* Disable checking host certificate */

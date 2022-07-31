@@ -156,7 +156,6 @@ char CURLFTPTransport::getURL(const char *destPath, const char *sourceURL, SWBuf
 		curl_easy_setopt(session, CURLOPT_PROGRESSDATA, &pd);
 		curl_easy_setopt(session, CURLOPT_PROGRESSFUNCTION, my_fprogress);
 
-
 		curl_easy_setopt(session, CURLOPT_DEBUGFUNCTION, my_trace);
 		/* Set a pointer to our struct to pass to the callback */
 		curl_easy_setopt(session, CURLOPT_FILE, &ftpfile);
@@ -165,10 +164,8 @@ char CURLFTPTransport::getURL(const char *destPath, const char *sourceURL, SWBuf
 		curl_easy_setopt(session, CURLOPT_VERBOSE, true);
 #ifndef OLDCURL
 		curl_easy_setopt(session, CURLOPT_CONNECTTIMEOUT_MS, timeoutMillis);
-		curl_easy_setopt(session, CURLOPT_TIMEOUT_MS, timeoutMillis);
 #else
 		curl_easy_setopt(session, CURLOPT_CONNECTTIMEOUT, timeoutMillis/1000);
-		curl_easy_setopt(session, CURLOPT_TIMEOUT, timeoutMillis/1000);
 #endif
 		/* FTP connection settings */
 
