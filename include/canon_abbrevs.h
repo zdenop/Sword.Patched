@@ -251,6 +251,8 @@ const struct abbrev builtin_abbrevs[] = {
   {"EZK", "Ezek"},		// Ezekiel
   {"EZRA", "Ezra"},		// Ezra
   {"FIVE APOCRYPHAL SYRIAC PSALMS", "AddPs"},		// Additional Psalm
+  {"FOURTEENTH VISION OF DANIEL", "FVD"},
+  {"FVD", "FVD"},
   {"G", "Gen"},		// Genesis
   {"GAL", "Gal"},		// Galatians
   {"GALATIANS", "Gal"},		// Galatians

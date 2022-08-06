@@ -103,6 +103,7 @@ struct sbook otbooks_lxx[] = {
   {"Bel and the Dragon", "Bel", "Bel", 1},
   {"I Enoch", "1En", "1En", 108},
   {"Odes", "Odes", "Odes", 14},
+  {"Fourteenth Vision of Daniel", "FVD", "FVD", 1},
   {"", "", "", 0}
 };
 
@@ -325,6 +326,8 @@ int vm_lxx[] = {
   // Odes
   19, 43, 10, 20, 20, 19, 45, 88, 79, 88,
   55, 32, 79, 46,
+  // Fourteen Vision of Daniel
+  88,
   // Matthew
   25, 23, 17, 25, 48, 34, 29, 34, 38, 42,
   30, 50, 58, 36, 39, 28, 27, 35, 30, 34,
