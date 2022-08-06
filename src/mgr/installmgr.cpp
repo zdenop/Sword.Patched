@@ -646,12 +646,14 @@ SWLOGD("***** relativePath: %s \n", relativePath.c_str());
 								retVal = FileMgr::copyFile(modFile.c_str(), targetFile.c_str());
 							}
 						}
-						// let's add our install source information
-						SWConfig *newConfig = new SWConfig(targetFile.c_str());
-						newConfig->setValue(modName, "InstallSourceID", sourceUID);
-						newConfig->setValue(modName, "InstallSourceCaption", sourceCaption);
-						newConfig->save();
-						delete newConfig;
+						if (!forgetInstallSource) {
+							// let's add our install source information
+							SWConfig *newConfig = new SWConfig(targetFile.c_str());
+							newConfig->setValue(modName, "InstallSourceID", sourceUID);
+							newConfig->setValue(modName, "InstallSourceCaption", sourceCaption);
+							newConfig->save();
+							delete newConfig;
+						}
 					}
 
 					delete config;

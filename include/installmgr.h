@@ -81,6 +81,7 @@ protected:
 	long timeoutMillis;
 	SWBuf u, p;
 	bool unverifiedPeerAllowed;
+	bool forgetInstallSource;
 
 	/** override this method and provide your own custom RemoteTransport subclass
 	 */
@@ -289,6 +290,7 @@ public:
 	long getTimeoutMillis() { return timeoutMillis; }
 
 	void setUnverifiedPeerAllowed(bool allowed) { this->unverifiedPeerAllowed = allowed; }
+	void setForgetInstallSource(bool forget) { this->forgetInstallSource = forget; }
 	bool isUnverifiedPeerAllowed() { return unverifiedPeerAllowed; }
 
 	/** Request nicely to terminate an ongoing transfer.

@@ -51,6 +51,7 @@ SWBuf confPath;
 
 bool isConfirmedByForce;
 bool isUnvPeerAllowed;
+bool isForgetInstallSource;
 
 
 void usage(const char *progName = 0, const char *error = 0);
@@ -176,6 +177,9 @@ void init() {
 		installMgr = new MyInstallMgr(baseDir, statusReporter);
 		if (isConfirmedByForce) { 
 			installMgr->setUserDisclaimerConfirmed(true);
+		}
+		if (isForgetInstallSource) {
+			installMgr->setForgetInstallSource(true);
 		}
 	}
 }
@@ -442,6 +446,7 @@ void usage(const char *progName, const char *error) {
 		"\t -ll <path>\t\t\tlist available modules at local path\n"
 		"\t -li <path> <modName>\t\tinstall module from local path\n"
 		"\t -d\t\t\t\tturn debug output on\n"
+		"\t -xr\t\t\t\tdon't record from where module was installed\n"
 		, (progName ? progName : "installmgr"), SWVersion::currentVersion.getText());
 	finish(-1);
 }
@@ -451,6 +456,7 @@ int main(int argc, char **argv) {
 	
 	isConfirmedByForce = false;
 	isUnvPeerAllowed = false;
+	isForgetInstallSource = false;
 	
 	if (argc < 2) usage(*argv);
 
@@ -463,6 +469,9 @@ int main(int argc, char **argv) {
 		}
 		else if (!strcmp(argv[i], "--allow-unverified-tls-peer")) {
 			isUnvPeerAllowed = true;
+		}
+		else if (!strcmp(argv[i], "-xr")) {
+			isForgetInstallSource = true;
 		}
 		else if (!strcmp(argv[i], "-init")) {
 			initConfig();
