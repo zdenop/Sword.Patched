@@ -18,7 +18,7 @@ LIBS += -L/usr/lib64
 #CXXFLAGS += -g -O0
 #CFLAGS += -g -O0
 #LDFLAGS += -g -O0
-CXXFLAGS += -O3 -std=c++0x
+CXXFLAGS += -O3 -std=c++0x -pthread
 CFLAGS += -O3
 #-----------------------------------------------------------------------------
 
