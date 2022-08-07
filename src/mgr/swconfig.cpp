@@ -21,6 +21,8 @@
  *
  */
 
+#include <set>
+
 #include <swconfig.h>
 #include <utilstr.h>
 #include <filemgr.h>
@@ -33,6 +35,61 @@ SWORD_NAMESPACE_START
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+
+namespace {
+
+	bool outputSectionHeader(const SectionMap &sections, SWBuf sectName, FileDesc *cfile) {
+		SectionMap::const_iterator commentSection = sections.find("_ConfComments");
+		ConfigEntMap::const_iterator comment;
+		SWBuf buf = "";
+		if (sectName == "_ConfComments") return true;
+		if (sectName == "_ConfOrder") return true;
+		if (commentSection != sections.end()) {
+			comment = (*commentSection).second.find(SWBuf("Section.") + sectName);
+			if (comment != (*commentSection).second.end()) {
+				if (!(*comment).second.startsWith("\n")) buf += SWBuf("\n");
+				buf += (*comment).second;
+			}
+		}
+		if (!buf.endsWith("\n")) buf += "\n";
+		buf += "[";
+		buf += sectName;
+		buf += "]\n";
+		cfile->write(buf.c_str(), buf.length());
+		return false;
+	}
+
+	void outputSectionEntry(const SectionMap &sections, SWBuf sectName, SWBuf entryKey, SWBuf entryValue, FileDesc *cfile, bool includeComments = true) {
+		SectionMap::const_iterator commentSection = sections.find("_ConfComments");
+		ConfigEntMap::const_iterator comment;
+		SWBuf buf = "";
+		if (commentSection != sections.end() && includeComments) {
+			comment = (*commentSection).second.find(SWBuf("Section.") + sectName + ".Entry." + entryKey);
+			if (comment != (*commentSection).second.end()) {
+				buf += (*comment).second;
+				if (!buf.endsWith("\n")) buf += "\n";
+			}
+		}
+		buf += entryKey;
+		buf += "=";
+		buf += entryValue;
+		buf += "\n";
+		cfile->write(buf.c_str(), buf.length());
+	}
+
+
+	void outputRemainingSectionEntries(const SectionMap &sections, SectionMap::const_iterator currentSection, const std::set<SWBuf> &completedEntries, FileDesc *cfile) {
+		SWBuf lastEntry;
+		for (ConfigEntMap::const_iterator entry = (*currentSection).second.begin(); entry != (*currentSection).second.end(); ++entry) {
+			if (completedEntries.find(SWBuf("Section.") + (*currentSection).first + ".Entry." + (*entry).first) == completedEntries.end()) {
+				outputSectionEntry(sections, (*currentSection).first, (*entry).first, (*entry).second, cfile, lastEntry != (*entry).first);
+				lastEntry = (*entry).first;
+			}
+		}
+	}
+}
+
+
 
 SWConfig::SWConfig() {
 }
@@ -63,6 +120,7 @@ void SWConfig::load() {
 	SWBuf sectName;
 	bool first = true;
 	SWBuf commentLines;
+	int elementOrder = 0;
 	
 	getSections().erase(getSections().begin(), getSections().end());
 	
@@ -97,6 +155,7 @@ void SWConfig::load() {
 						getSections()["_ConfComments"][SWBuf("Section.") + sectName] = commentLines;
 						commentLines = "";
 					}
+					getSections()["_ConfOrder"][SWBuf().appendFormatted("%.4d", elementOrder++)] = SWBuf("Section.") + sectName;
 				}
 				else {
 					strtok(buf, "=");
@@ -109,6 +168,7 @@ void SWConfig::load() {
 							getSections()["_ConfComments"][SWBuf("Section.") + sectName + ".Entry." + buf] = commentLines;
 							commentLines = "";
 						}
+						getSections()["_ConfOrder"][SWBuf().appendFormatted("%.4d", elementOrder++)] = SWBuf("Entry.") + buf;
 					}
 					else {
 						if (commentLines.size() && !commentLines.endsWith("\n")) commentLines += "\n";
@@ -137,46 +197,67 @@ void SWConfig::save() const {
 
 	FileDesc *cfile;
 	SWBuf buf;
-	SectionMap::const_iterator sit;
+	SectionMap::const_iterator currentSection = getSections().end();
 	ConfigEntMap::const_iterator entry;
-	SectionMap::const_iterator commentSection = getSections().find("_ConfComments");
-	ConfigEntMap::const_iterator comment;
+	SectionMap::const_iterator orderSection = getSections().find("_ConfOrder");
+	ConfigEntMap::const_iterator orderElement;
 	SWBuf sectName;
+	SWBuf entryName;
+	std::set<SWBuf> completedEntries;
 	
 	cfile = FileMgr::getSystemFileMgr()->open(getFileName().c_str(), FileMgr::RDWR|FileMgr::CREAT|FileMgr::TRUNC);
 	if (cfile->getFd() > 0) {
-		
-		for (sit = getSections().begin(); sit != getSections().end(); ++sit) {
-			buf =  "";
-			sectName = (*sit).first;
-			if (sectName == "_ConfComments") continue;
-			if (commentSection != getSections().end()) {
-				comment = (*commentSection).second.find(SWBuf("Section.") + sectName);
-				if (comment != (*commentSection).second.end()) {
-					if (!(*comment).second.startsWith("\n")) buf +=  SWBuf("\n");
-					buf +=  (*comment).second;
+
+		bool skip = false;
+		// first iterate order of elements from load
+		for (int elementOrder = 0; orderSection != getSections().end(); ++elementOrder) {
+			orderElement = (*orderSection).second.find(SWBuf().appendFormatted("%.4d", elementOrder));
+			if (orderElement != (*orderSection).second.end()) {
+				if ((*orderElement).second.startsWith("Section.")) {
+					if (currentSection != getSections().end()) {
+						outputRemainingSectionEntries(getSections(), currentSection, completedEntries, cfile);
+					}
+					sectName = (*orderElement).second;
+					sectName << 8;
+					currentSection = getSections().find(sectName);
+					if (currentSection != getSections().end()) {
+						skip = outputSectionHeader(getSections(), sectName, cfile);
+						completedEntries.insert(SWBuf("Section.") + sectName);
+					}
+					else skip = true;
 				}
-			}
-			if (!buf.endsWith("\n")) buf += "\n";
-			buf += "[";
-			buf += (*sit).first.c_str();
-			buf += "]\n";
-			cfile->write(buf.c_str(), buf.length());
-			for (entry = (*sit).second.begin(); entry != (*sit).second.end(); ++entry) {
-				SWBuf entryKey = (*entry).first.c_str();
-				buf =  "";
-				if (commentSection != getSections().end()) {
-					comment = (*commentSection).second.find(SWBuf("Section.") + sectName + ".Entry." + entryKey);
-					if (comment != (*commentSection).second.end()) {
-						buf += (*comment).second;
-						if (!buf.endsWith("\n")) buf += "\n";
+				else if ((*orderElement).second.startsWith("Entry.")) {
+					if (!skip) {
+						entryName = (*orderElement).second;
+						entryName << 6;
+						if (currentSection != getSections().end()) {
+							if (completedEntries.find(SWBuf("Section.") + sectName + ".Entry." + entryName) == completedEntries.end()) {
+								bool first = true;
+								for (entry = (*currentSection).second.lower_bound(entryName); entry != (*currentSection).second.upper_bound(entryName); ++entry) {
+									outputSectionEntry(getSections(), sectName, entryName, (*entry).second, cfile, first);
+									first = false;
+								}
+								completedEntries.insert(SWBuf("Section.") + sectName + ".Entry." + entryName);
+							}
+						}
 					}
 				}
-				buf += (*entry).first.c_str();
-				buf += "=";
-				buf += (*entry).second.c_str();
-				buf += "\n";
-				cfile->write(buf.c_str(), buf.length());
+				else {
+					// no idea what it is.  shouldn't happen
+				}
+			}
+			else break;
+		}
+		if (currentSection != getSections().end()) {
+			outputRemainingSectionEntries(getSections(), currentSection, completedEntries, cfile);
+		}
+
+		for (currentSection = getSections().begin(); currentSection != getSections().end(); ++currentSection) {
+			sectName = (*currentSection).first;
+			if (completedEntries.find(SWBuf("Section.") + sectName) == completedEntries.end()) {
+				if (outputSectionHeader(getSections(), sectName, cfile)) continue;
+				outputRemainingSectionEntries(getSections(), currentSection, completedEntries, cfile);
+				completedEntries.insert(SWBuf("Section.") + sectName);
 			}
 		}
 		buf = "\n";
