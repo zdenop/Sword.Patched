@@ -292,6 +292,7 @@ public:
 	void setUnverifiedPeerAllowed(bool allowed) { this->unverifiedPeerAllowed = allowed; }
 	void setForgetInstallSource(bool forget) { this->forgetInstallSource = forget; }
 	bool isUnverifiedPeerAllowed() { return unverifiedPeerAllowed; }
+	bool isForgetInstallSource() { return forgetInstallSource; }
 
 	/** Request nicely to terminate an ongoing transfer.
 	 * If threading is a concern, consider calling terminate() from your status reporters

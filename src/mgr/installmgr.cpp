@@ -100,6 +100,7 @@ InstallMgr::InstallMgr(const char *privatePath, StatusReporter *sr, SWBuf u, SWB
 	passive = true;
 	timeoutMillis = 10000;
 	unverifiedPeerAllowed = true;
+	forgetInstallSource = false;
 	statusReporter = sr;
 	this->u = u;
 	this->p = p;
@@ -454,11 +455,11 @@ SWLOGD("***** fromLocation: %s \n", fromLocation);
 SWLOGD("***** modName: %s \n", modName);
 
 	InstallSource *packagePreference = 0;
-	if (is->packagePreference && is->chainedSource) {
-		packagePreference = is;
-		is = is->chainedSource;
-	}
 	if (is) {
+		if (is->packagePreference && is->chainedSource) {
+			packagePreference = is;
+			is = is->chainedSource;
+		}
 		sourceDir = (SWBuf)privatePath + "/" + is->uid;
 		sourceUID = is->uid;
 		sourceCaption = is->caption;
