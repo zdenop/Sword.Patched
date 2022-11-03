@@ -296,6 +296,9 @@ int InstallMgr::removeModule(SWMgr *manager, const char *moduleName) {
 
 		SWBuf modFile;
 		SWBuf modDir;
+		SWBuf destRoot = manager->configPath;
+		removeTrailingSlash(destRoot);
+		destRoot += "/";
 		entry = module->second.find("AbsoluteDataPath");
 		modDir = entry->second.c_str();
 		removeTrailingSlash(modDir);
@@ -312,13 +315,10 @@ int InstallMgr::removeModule(SWMgr *manager, const char *moduleName) {
 		else {	//remove all files in DataPath directory
 			ConfigEntMap::iterator entry;
 			FileMgr::removeDir(modDir.c_str());
-			std::vector<DirEntry> dirList = FileMgr::getDirList(manager->configPath);
+			std::vector<DirEntry> dirList = FileMgr::getDirList(destRoot.c_str());
 			for (unsigned int i = 0; i < dirList.size(); ++i) {
 				if (dirList[i].name.endsWith(".conf")) {
-					modFile = manager->configPath;
-					removeTrailingSlash(modFile);
-					modFile += "/";
-					modFile += dirList[i].name;
+					modFile = destRoot + dirList[i].name;
 					SWConfig *config = new SWConfig(modFile.c_str());
 					if (config->getSections().find(modName) != config->getSections().end()) {
 						delete config;
@@ -328,6 +328,11 @@ int InstallMgr::removeModule(SWMgr *manager, const char *moduleName) {
 				}
 			}
 		}
+
+		// assure any cache file is removed
+		SWBuf modCache = destRoot + "modules-conf.cache";
+		FileMgr::removeFile(modCache.c_str());
+
 		return 0;
 	}
 	return 1;
@@ -480,6 +485,11 @@ SWLOGD("***** modName: %s \n", modName);
 			cipher = true;
 		}
 
+		// root of where destination confs live
+		SWBuf destConfRoot = destMgr->configPath;
+		removeTrailingSlash(destConfRoot);
+		destConfRoot += "/";
+
 		// root of where to install or cache install during download
 		SWBuf destRoot = mgr.prefixPath;
 		entry = module->second.find("PrefixPath");
@@ -582,7 +592,14 @@ SWLOGD("***** installModule: trying to get archive cache: %s \n", relativeArchiv
 				}
 
 				if (!errorCode) {
+					// if all is good, use the zip archive
 					errorCode = ZipCompress::unZip(absoluteArchivePath.c_str() , destRoot.c_str());
+
+					// assure any cache file is removed
+					SWBuf modCache = destRoot + "modules-conf.cache";
+					FileMgr::removeFile(modCache.c_str());
+
+					// remove the zip archive
 					FileMgr::removeFile(absoluteArchivePath.c_str());
 					
 				}
@@ -631,10 +648,7 @@ SWLOGD("***** relativePath: %s \n", relativePath.c_str());
 
 					// we found a conf file with our module
 					if (config->getSections().find(modName) != config->getSections().end()) {
-						SWBuf targetFile = destMgr->configPath; //"./mods.d/";
-						removeTrailingSlash(targetFile);
-						targetFile += "/";
-						targetFile += dirList[i].name;
+						SWBuf targetFile = destConfRoot + dirList[i].name;
 						retVal = FileMgr::copyFile(modFile.c_str(), targetFile.c_str());
 						if (cipher) {
 							if (getCipherCode(modName, config)) {
@@ -661,6 +675,11 @@ SWLOGD("***** relativePath: %s \n", relativePath.c_str());
 				}
 			}
 		}
+
+		// remove any cache file which might exist
+		SWBuf modCache = destConfRoot + "modules-conf.cache";
+		FileMgr::removeFile(modCache.c_str());
+
 		return (aborted) ? -9 : retVal;
 	}
 	return 1;

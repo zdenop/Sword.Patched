@@ -265,7 +265,7 @@ protected:
 	//
 	StringList augPaths;
 	virtual char addModToConfig(FileDesc *conffd, const char *fname);
-	virtual void loadConfigDir(const char *ipath);
+	virtual void loadConfigDir(const char *ipath, bool skipCache = false);
 
 public:
 

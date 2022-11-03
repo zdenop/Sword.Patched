@@ -744,12 +744,25 @@ void SWMgr::findConfig(char *configType, char **prefixPath, char **configPath, s
 }
 
 
-void SWMgr::loadConfigDir(const char *ipath)
+void SWMgr::loadConfigDir(const char *ipath, bool skipCache)
 {
 	SWBuf basePath = ipath;
 	if (!basePath.endsWith("/") && !basePath.endsWith("\\")) basePath += "/";
 
 	SWBuf newModFile;
+	newModFile = basePath + "modules-conf.cache";
+	skipCache = skipCache || !FileMgr::existsFile(newModFile.c_str());
+	SWConfig *pathConfig = new SWConfig(newModFile);
+
+	if (!skipCache) {
+		if (config) {
+			config->augment(*pathConfig);
+		}
+		else	config = myconfig = pathConfig;
+		return;
+	}
+
+	if (!config) config = myconfig = pathConfig;
 
 	std::vector<DirEntry> dirList = FileMgr::getDirList(ipath);
 	for (unsigned int i = 0; i < dirList.size(); ++i) {
@@ -759,17 +772,18 @@ void SWMgr::loadConfigDir(const char *ipath)
 		}
 
 		newModFile = basePath + dirList[i].name;
-		if (config) {
-			SWConfig tmpConfig(newModFile);
-			config->augment(tmpConfig);
-		}
-		else	config = myconfig = new SWConfig(newModFile);
+		SWConfig tmpConfig(newModFile);
+		config->augment(tmpConfig);
 	}
 
-	if (!config) {	// if no .conf file exist yet, create a default
-		newModFile = basePath + "globals.conf";
-		config = myconfig = new SWConfig(newModFile);
+	pathConfig->save();
+
+	// if we're not handing off our pathConfig to be managed by our object
+	// we need to clean up
+	if (pathConfig != myconfig) {
+		delete pathConfig;
 	}
+
 }
 
 
