@@ -757,6 +757,7 @@ void SWMgr::loadConfigDir(const char *ipath, bool skipCache)
 	if (!skipCache) {
 		if (config) {
 			config->augment(*pathConfig);
+			delete pathConfig;
 		}
 		else	config = myconfig = pathConfig;
 		return;
