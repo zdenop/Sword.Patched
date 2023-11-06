@@ -69,7 +69,7 @@ namespace {
 	static int my_httpfprogress(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow) {
 		if (clientp) {
 			MyProgressData *pd = (MyProgressData *)clientp;
-SWLOGD("CURLFTPTransport report progress: totalSize: %ld; xfered: %ld\n", (long)dltotal, (long)dlnow);
+SWLOGD("CURLHTTPTransport report progress: totalSize: %ld; xfered: %ld\n", (long)dltotal, (long)dlnow);
 			if (pd->sr) {
 				if (dltotal < 0) dltotal = 0;
 				if (dlnow < 0) dlnow = 0;
@@ -249,7 +249,7 @@ vector<struct DirEntry> CURLHTTPTransport::getDirList(const char *dirURL) {
 			possibleNameLength = (int)(pBufRes - pBuf);
 			possibleName.setFormatted("%.*s", possibleNameLength, pBuf);
 			if (isalnum(possibleName[0])) {
-SWLOGD("getDirListHTTP: Found a file: %s", possibleName.c_str());
+SWLOGD("CURLHTTPTransport::getDirList: Found a file: %s", possibleName.c_str());
 				pBuf = pBufRes;
 				pBufRes = (char *)findSizeStart(pBuf);
 				fSize = 0;
@@ -276,7 +276,7 @@ SWLOGD("getDirListHTTP: Found a file: %s", possibleName.c_str());
 	}
 	else
 	{
-		SWLog::getSystemLog()->logWarning("FTPURLGetDir: failed to get dir %s\n", dirURL);
+		SWLog::getSystemLog()->logWarning("CURLHTTPTransport::getDirList: failed to get dir %s\n", dirURL);
 	}
 	return dirList;
 }
