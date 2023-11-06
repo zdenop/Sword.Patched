@@ -3,18 +3,20 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.10)
 
 SET(CMAKE_C_FLAGS "-DBIBLESYNC ${CMAKE_C_FLAGS}")
 
 #SET(NDK_DEBUG 0)
 SET(CMAKE_C_FLAGS "-D__unix__ ${CMAKE_C_FLAGS}")
 SET(CMAKE_C_FLAGS "-D_FTPLIB_NO_COMPAT ${CMAKE_C_FLAGS}")
+SET(CMAKE_C_FLAGS "-DCURLAVAILABLE ${CMAKE_C_FLAGS}")
 
 SET(CMAKE_C_FLAGS "-Wno-invalid-source-encoding ${CMAKE_C_FLAGS}")
 
 
 SET(CMAKE_C_FLAGS "-DOS_ANDROID ${CMAKE_C_FLAGS}")
+SET(CMAKE_C_FLAGS "-DIOAPI_NO_64 ${CMAKE_C_FLAGS}")
 
 SET(CMAKE_C_FLAGS "-fvisibility=hidden ${CMAKE_C_FLAGS}")
 SET(CMAKE_C_FLAGS "-DSTDC_HEADERS ${CMAKE_C_FLAGS}")
@@ -31,6 +33,9 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS}")
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
+
+find_package(curl REQUIRED CONFIG)
+find_library(log-lib log)
 
 add_library( # Sets the name of the library.
              sword
@@ -61,6 +66,8 @@ add_library( # Sets the name of the library.
         modules/texts/swtext.cpp
         modules/texts/ztext/ztext.cpp
         modules/texts/ztext4/ztext4.cpp
+        modules/common/ioapi.c
+        modules/common/unzip.c
         modules/common/rawstr4.cpp
         modules/common/lzsscomprs.cpp
         modules/common/zipcomprs.cpp
@@ -170,6 +177,8 @@ add_library( # Sets the name of the library.
         mgr/versificationmgr.cpp
         mgr/remotetrans.cpp
         mgr/ftplibftpt.cpp
+        mgr/curlftpt.cpp
+        mgr/curlhttpt.cpp
         utilfuns/swobject.cpp
         utilfuns/roman.cpp
         utilfuns/swbuf.cpp
@@ -194,6 +203,10 @@ add_library( # Sets the name of the library.
 
         )
 
+set_target_properties(sword PROPERTIES CXX_STANDARD 17)
+target_compile_options(sword PRIVATE -Wall)
+
+
 include_directories(
         ../../../../../../../include
 
@@ -201,19 +214,7 @@ include_directories(
         ../../../../../../../../biblesync/src/Android/
 
 )
-# Searches for a specified prebuilt library and stores the path as a
-# variable. Because CMake includes system libraries in the search path by
-# default, you only need to specify the name of the public NDK library
-# you want to add. CMake verifies that the library exists before
-# completing its build.
 
-find_library( # Sets the name of the path variable.
-              log-lib
-
-              # Specifies the name of the NDK library that
-              # you want CMake to locate.
-              log
-        )
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
@@ -221,9 +222,7 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
                       sword
-
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib}
-                       z
+                      ${log-lib}
+                      curl::curl
+                      z
         )

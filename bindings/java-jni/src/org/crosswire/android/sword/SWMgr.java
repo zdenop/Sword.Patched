@@ -2,7 +2,7 @@
  *
  *  SWMgr.java -	
  *
- * $Id: SWMgr.java 2833 2013-06-29 06:40:28Z chrislit $
+ * $Id$
  *
  * Copyright 2009-2013 CrossWire Bible Society (http://www.crosswire.org)
  *	CrossWire Bible Society
@@ -77,12 +77,11 @@ public class SWMgr {
 	public native String[]    getExtraConfigKeys(String section);
 	public native String      getExtraConfigValue(String section, String key);
 
+	/**
+	 * override in platform descendant, e.g., AndroidSWMgr
+	 */
 	public String             getStorageBasePath() {
 		return ".";
-/*
-		Context context = app.getApplicationContext();
-		return context.getFilesDir().getAbsolutePath();
-*/
 	}
 	public static interface BibleSyncListener {
 		public void navReceived(String osisRef);

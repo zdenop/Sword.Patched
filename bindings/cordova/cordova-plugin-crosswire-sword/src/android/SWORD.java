@@ -159,7 +159,7 @@ public class SWORD extends CordovaPlugin {
 			m.put("shortCopyright", mod.getConfigEntry("ShortCopyright"));
 			m.put("shortPromo", mod.getConfigEntry("ShortPromo"));
 			m.put("cipherKey", mod.getConfigEntry("CipherKey"));
-Log.d(TAG, "SWModule_getRemoteModuleByName("+args.getString(0)+", " + args.getString(1) + " returned successfully.");
+//Log.d(TAG, "SWModule_getRemoteModuleByName("+args.getString(0)+", " + args.getString(1) + " returned successfully.");
 			callbackContext.success(m);
 		}
 		else if (action.equals("InstallMgr_remoteInstallModule")) {
@@ -585,20 +585,20 @@ Log.d(TAG, "... finished renderChapter");
 			final String url      = args.getString(0);
 			final String postData = args.getString(1);
 			final int method      = args.getInt(2);
-Log.d(TAG, "about to spawn thread makeRequest(url: " + url + ", postData: " + postData + ", method: " + method);
+//Log.d(TAG, "about to spawn thread makeRequest(url: " + url + ", postData: " + postData + ", method: " + method);
 
 			cordova.getThreadPool().execute(new Runnable() {
 				private CallbackContext makeRequestContext = callbackContext;
 				@Override
 				public void run() {
 					String response = makeRequest(url, postData, method, null);
-Log.d(TAG, "received response from makeRequest with .length(): " + (response != null ? response.length() : "null"));
+//Log.d(TAG, "received response from makeRequest with .length(): " + (response != null ? response.length() : "null"));
 					PluginResult result = new PluginResult(PluginResult.Status.OK, response);
-Log.d(TAG, "added response to result object");
+//Log.d(TAG, "added response to result object");
 					result.setKeepCallback(false);
-Log.d(TAG, "setting result object keepCallback to false and calling sendPluginResult");
+//Log.d(TAG, "setting result object keepCallback to false and calling sendPluginResult");
 					makeRequestContext.sendPluginResult(result);
-Log.d(TAG, "finished calling sendPluginResult");
+//Log.d(TAG, "finished calling sendPluginResult");
 				}
 			});
 
@@ -637,20 +637,20 @@ Log.d(TAG, "finished calling sendPluginResult");
 
 		String currentKey[]   = masterMod.getKeyChildren();
 
-Log.d(TAG, "getRenderChapter: checking currentKey");
+//Log.d(TAG, "getRenderChapter: checking currentKey");
 		// assert we have a valid location
 		if (currentKey.length <= SWModule.VERSEKEY_BOOKABBREV || currentKey.length <= SWModule.VERSEKEY_CHAPTER) return r;
-Log.d(TAG, "getRenderChapter: currentKey valid.");
+//Log.d(TAG, "getRenderChapter: currentKey valid.");
 
 		masterMod.setKeyText(currentKey[SWModule.VERSEKEY_BOOKABBREV]+"."+currentKey[SWModule.VERSEKEY_CHAPTER]+".1");
-Log.d(TAG, "getRenderChapter: masterMod.setKeyText returned.");
+//Log.d(TAG, "getRenderChapter: masterMod.setKeyText returned.");
 
 		String [] verseKey = masterMod.getKeyChildren();
 		while (
 				   masterMod.error() == 0
 				&& currentKey[SWModule.VERSEKEY_BOOK].equals(verseKey[SWModule.VERSEKEY_BOOK])
 				&& currentKey[SWModule.VERSEKEY_CHAPTER].equals(verseKey[SWModule.VERSEKEY_CHAPTER])) {
-Log.d(TAG, "looping chapter: " + verseKey[SWModule.VERSEKEY_OSISREF]);
+//Log.d(TAG, "looping chapter: " + verseKey[SWModule.VERSEKEY_OSISREF]);
 
 			mod.setKeyText(verseKey[SWModule.VERSEKEY_OSISREF]);
 			char error = mod.error();
@@ -675,7 +675,7 @@ Log.d(TAG, "looping chapter: " + verseKey[SWModule.VERSEKEY_OSISREF]);
 			masterMod.next();
 			verseKey = masterMod.getKeyChildren();
 		}
-Log.d(TAG, "Done looping chapter");
+//Log.d(TAG, "Done looping chapter");
 
 		masterMod.setKeyText(saveMasterKey);
 		mod.setKeyText(saveKey);
@@ -710,14 +710,14 @@ Log.d(TAG, "makeRequest(url: " + url + ", postData: " + postData + ", method: " 
 		defaultHeaders.put("Accept", "*/*");
 //		defaultHeaders.put("Content-Type", "application/xml");
 	 	defaultHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-Log.d(TAG, "about to add postData length to header");
+//Log.d(TAG, "about to add postData length to header");
 		if (method != METHOD_GET && postData != null) defaultHeaders.put("Content-Length", Integer.toString(postData.length()));
-Log.d(TAG, "finished adding postData length to header");
+//Log.d(TAG, "finished adding postData length to header");
 
 		try {
-Log.d(TAG, "adding any given headers");
+//Log.d(TAG, "adding any given headers");
 			if (headers != null) defaultHeaders.putAll(headers);
-Log.d(TAG, "done adding any given headers");
+//Log.d(TAG, "done adding any given headers");
 
 			if (method == METHOD_GET && postData != null && postData.length() > 0) {
 				// some sanity checks for appending GET params to URL
@@ -727,16 +727,16 @@ Log.d(TAG, "done adding any given headers");
 				url += postData;
 			}
 
-Log.d(TAG, "opening connection");
+//Log.d(TAG, "opening connection");
 			connection = (HttpURLConnection) new URL(url).openConnection();
-Log.d(TAG, "setting request method");
+//Log.d(TAG, "setting request method");
 			connection.setRequestMethod(METHODS_TEXT[method]);
-Log.d(TAG, "setting request properties");
+//Log.d(TAG, "setting request properties");
 			for (String k : defaultHeaders.keySet()) {
 				connection.setRequestProperty(k, defaultHeaders.get(k));
 			}
 			if (method == METHOD_POST) {
-Log.d(TAG, "sending post data");
+//Log.d(TAG, "sending post data");
 				connection.setDoOutput(true);
 				if (postData != null) {
 					DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
@@ -745,10 +745,10 @@ Log.d(TAG, "sending post data");
 					dos.close();
 				}
 			}
-Log.d(TAG, "getting response code");
+//Log.d(TAG, "getting response code");
 			int responseCode = connection.getResponseCode();
 Log.d(TAG, "response code: " + responseCode);
-Log.d(TAG, "getting response");
+//Log.d(TAG, "getting response");
 			BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 			StringBuilder response = new StringBuilder();
 			String line;
@@ -764,7 +764,7 @@ Log.d(TAG, "finished. returning response with .length(): " + response.length());
 			return response.toString();
 		}
 		catch (Exception e) {
-Log.d(TAG, "an exception occurred in makeRequest thread: " + e);
+Log.i(TAG, "an exception occurred in makeRequest thread: " + e);
 			e.printStackTrace();
 		}
 		return null;
