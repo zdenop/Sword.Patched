@@ -202,8 +202,17 @@ SWLOGD("***** Finished performing curl easy action. \n");
 			else if (CURLE_REMOTE_ACCESS_DENIED == res) {
 				retVal = -3;
 			}
-			else {
+			else if (CURLE_REMOTE_FILE_NOT_FOUND == res) {
+				retVal = -4;
+			}
+			else if (CURLE_HTTP_RETURNED_ERROR == res) {
+				retVal = -5;
+			}
+			else if (this->term)  {
 				retVal = -1;
+			}
+			else {
+				retVal = -9;
 			}
 		}
 	}

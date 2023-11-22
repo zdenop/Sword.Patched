@@ -184,7 +184,7 @@ SWLOGD("getting file %s\n", sourcePath.c_str());
 	}
 	if (fd > 0) FileMgr::closeFile(fd);
 SWLOGD("FTPLibFTPTransport - returning: %d\n", retVal);
-	return retVal;
+	return retVal == 1 ? (this->term ? -1 : -2) : retVal;
 }
 
 
