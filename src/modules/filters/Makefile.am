@@ -84,6 +84,7 @@ libsword_la_SOURCES += $(filtersdir)/utf8greekaccents.cpp
 libsword_la_SOURCES += $(filtersdir)/cipherfil.cpp
 
 PLFIL = $(filtersdir)/rtfhtml.cpp
+PLFIL += $(filtersdir)/rtfplain.cpp
 PLFIL += $(filtersdir)/greeklexattribs.cpp
 PLFIL += $(filtersdir)/papyriplain.cpp
 
