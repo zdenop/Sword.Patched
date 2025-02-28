@@ -222,6 +222,7 @@ void VersificationMgr::System::loadFromSBook(const sbook *ot, const sbook *nt, i
 		book++;
 	}
 	BMAX[0] = book;
+
 	book = 0;
 	ntStartOffset = offset;
 	offset++;			// testament heading
@@ -239,6 +240,7 @@ void VersificationMgr::System::loadFromSBook(const sbook *ot, const sbook *nt, i
 		nt++;
 		book++;
 	}
+
 	BMAX[1] = book;
 
 	// TODO: build offset speed array
