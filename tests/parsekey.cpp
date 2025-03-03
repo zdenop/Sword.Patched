@@ -31,8 +31,8 @@ using namespace sword;
 #endif
 
 int main(int argc, char **argv) {
-	if ((argc < 2) || (argc > 8)) {
-		std::cerr << "usage: " << *argv << " <\"string to parse\"> [locale_name] [v11n] [context] [echo params 1|0] [test-in-set-verse 1|0] [intros 1|0]\n";
+	if ((argc < 2) || (argc > 9)) {
+		std::cerr << "usage: " << *argv << " <\"string to parse\"> [locale_name] [v11n] [context] [echo params 1|0] [test-in-set-verse 1|0] [intros 1|0] [to_v11n]\n";
 		exit(-1);
 	}
 
@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
 
 	bool echo = (argc > 5) ? !strcmp(argv[5], "1") : false;
 	bool inSetTest = (argc > 6) ? !strcmp(argv[6], "1") : false;
+//	std::cout << "argc: " << argc << "; argv[6]: " << argv[6] << "; inSetTest: " << inSetTest << "\n";
 	bool intros = (argc > 7) ? !strcmp(argv[7], "1") : false;
 
 	DefaultVSKey.setIntros(intros);
@@ -77,6 +78,16 @@ int main(int argc, char **argv) {
 	if (inSetTest) {
 		verses.setText(context);
 		std::cout << "Verse is" << ((verses.popError()) ? " NOT" : "") << " in set.\n\n";
+	}
+
+	if (argc > 8) {
+		VerseKey toVSKey;
+		toVSKey.copyFrom(DefaultVSKey);
+		toVSKey.setVersificationSystem(argv[8]);
+		DefaultVSKey.setText(argv[1]);
+		toVSKey = DefaultVSKey;
+		std::cout << DefaultVSKey.getVersificationSystem() << ": " << DefaultVSKey.getRangeText() << " => " << toVSKey.getVersificationSystem() << ": " << toVSKey.getRangeText() << "\n";
+		
 	}
 	
 	return 0;
