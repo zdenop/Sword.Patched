@@ -238,7 +238,7 @@ char *StringMgr::upperUTF8(char *t, unsigned int maxlen) const {
 		it = toUpperData.find(ch);
 		getUTF8FromUniChar(it == toUpperData.end() ? ch : it->second, &text);
 	}
-	long len = maxlen ? (text.size() < maxlen ? text.size() : (maxlen - 1)) : 0;
+	long len = maxlen ? (text.size() < maxlen ? text.size() : (maxlen - 1)) : text.size();
 	if (len) memcpy(t, text.c_str(), len);
 	t[len] = 0;
 #endif
