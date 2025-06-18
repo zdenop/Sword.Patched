@@ -1,5 +1,8 @@
 AUTOMAKE_OPTIONS = 1.6
 
+if USE_INTERNAL_REGEX
+AM_CPPFLAGS = -I$(top_srcdir)/include/internal/regex
+endif
 LDADD = $(top_builddir)/lib/libsword.la
 
 bin_PROGRAMS = diatheke
