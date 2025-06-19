@@ -1181,7 +1181,7 @@ void SWModule::setConfig(ConfigEntMap *config) {
 
 
 bool SWModule::hasSearchFramework() {
-#ifdef USELUCENE
+#if defined(USELUCENE) || defined(USEXAPIAN)
 	return true;
 #else
 	return SWSearchable::hasSearchFramework();
