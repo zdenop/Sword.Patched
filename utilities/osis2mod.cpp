@@ -440,7 +440,8 @@ void makeValidRef(VerseKey &key) {
 	// Since isValidRef returned false constrain the key to the nearest prior reference.
 	// If we are past the last chapter set the reference to the last chapter
 	int chapterMax = key.getChapterMax();
-	if (key.getChapter() > chapterMax) {
+	bool beyondChapter = key.getChapter() > chapterMax;
+	if (beyondChapter) {
 		key.setChapter(chapterMax);
 	}
 
@@ -471,7 +472,7 @@ void makeValidRef(VerseKey &key) {
 	//    In this case we should re-versify Matt.7.30 as Matt.7.29.
 	//    However, since this and 2) are ambiguous, we'll re-reversify to the last entry in the module.
 	
-	while (!key.popError() && !module->hasEntry(&key)) {
+	while (!beyondChapter && !key.popError() && !module->hasEntry(&key)) {
 		key.decrement(1);
 	}
 
