@@ -33,9 +33,6 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <string>
-#include <algorithm>
-#include <cctype>
 
 #include <utilstr.h>
 #include <swmgr.h>
@@ -120,29 +117,6 @@ std::vector<ListKey> linkedVerses;
 
 static bool inCanonicalOSISBook = true; // osisID is for a book that is not in Sword's canon
 static bool normalize           = true; // Whether to normalize UTF-8 to NFC
-
-// Safe case-insensitive comparison for SWBuf
-static bool ci_equals(const SWBuf &a, const SWBuf &b) {
-	if (a.length() != b.length()) return false;
-	for (size_t i = 0; i < a.length(); ++i) {
-		if (std::tolower(static_cast<unsigned char>(a[i])) !=
-		    std::tolower(static_cast<unsigned char>(b[i]))) {
-			return false;
-		}
-	}
-	return true;
-}
-
-// Safe case-insensitive prefix comparison for SWBuf
-static bool ci_starts_with(const SWBuf &full, const SWBuf &prefix) {
-	if (prefix.length() > full.length()) return false;
-	for (size_t i = 0; i < prefix.length(); ++i) {
-		if (tolower(static_cast<unsigned char>(full[i])) != tolower(static_cast<unsigned char>(prefix[i]))) {
-			return false;
-		}
-	}
-	return true;
-}
 
 /**
  * Resolves an abbreviation or partial name against a list of candidate strings.
