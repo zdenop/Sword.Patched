@@ -1,9 +1,9 @@
-DEBUG(LINK MASTER): Gen.1.6
-DEBUG(LINK MASTER): Acts.2.21
+DEBUG(LINK MASTER)[112,78](Gen.1.6): 
+DEBUG(LINK MASTER)[201,41](Acts.2.21): 
 SUCCESS: ../../utilities/osis2mod: has finished its work and will now rest
-INFO(LINK): Linking Gen.1.7 to Gen.1.6
-INFO(LINK): Linking Gen.1.8 to Gen.1.6
-INFO(LINK): Linking Acts.2.22 to Acts.2.21
+INFO(LINK)[209,1](Gen.1.7): Linking to Gen.1.6
+INFO(LINK)[209,1](Gen.1.8): Linking to Gen.1.6
+INFO(LINK)[209,1](Acts.2.22): Linking to Acts.2.21
 Key:
 Psalms 3:1
 -------
