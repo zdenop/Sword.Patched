@@ -1647,6 +1647,7 @@ void processOSIS(std::istream& infile) {
 
 		if (!inentity && curChar == '&') {
 			inentity = true;
+			inWhitespace = false;
 			entitytype = ET_NONE;
 			entityToken = "&";
 			continue;
