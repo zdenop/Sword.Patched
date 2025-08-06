@@ -75,17 +75,18 @@ using namespace sword;
 
 //using namespace std;
 
-int       debug            =   0; // mask of debug flags
-const int DEBUG_WRITE      =   1; // writing to module
-const int DEBUG_VERSE      =   2; // verse start and end
-const int DEBUG_QUOTE      =   4; // quotes, especially Words of Christ (WOC)
-const int DEBUG_TITLE      =   8; // titles
-const int DEBUG_INTERVERSE =  16; // inter-verse material
-const int DEBUG_XFORM      =  32; // transformations
-const int DEBUG_REV11N     =  64; // versification
-const int DEBUG_REF        = 128; // parsing of osisID and osisRef
-const int DEBUG_STACK      = 256; // cleanup of references
-const int DEBUG_OTHER      = 512; // ins and outs of books, chapters and verses
+int       debug            =    0; // mask of debug flags
+const int DEBUG_WRITE      =    1; // writing to module
+const int DEBUG_VERSE      =    2; // verse start and end
+const int DEBUG_QUOTE      =    4; // quotes, especially Words of Christ (WOC)
+const int DEBUG_TITLE      =    8; // titles
+const int DEBUG_INTERVERSE =   16; // inter-verse material
+const int DEBUG_XFORM      =   32; // transformations
+const int DEBUG_REV11N     =   64; // versification
+const int DEBUG_REF        =  128; // parsing of osisID and osisRef
+const int DEBUG_STACK      =  256; // cleanup of references
+const int DEBUG_OTHER      =  512; // ins and outs of books, chapters and verses
+const int DEBUG_PARSE      = 1024; // parsing of numeric and character entities.
 
 // Exit codes
 const int EXIT_BAD_ARG     =   1; // Bad parameter given for program
@@ -1539,6 +1540,7 @@ void usage(const char *app, const char *error = 0, const bool verboseHelp = fals
 		fprintf(stderr, "\t\t\t\t\t128 - parsing of osisID and osisRef\n");
 		fprintf(stderr, "\t\t\t\t\t256 - internal stack\n");
 		fprintf(stderr, "\t\t\t\t\t512 - miscellaneous\n");
+		fprintf(stderr, "\t\t\t\t\t1024 - parsing of numeric and character entities and comments.\n");
 		fprintf(stderr, "\t\t\t\t This argument can be used more than once. (Or\n");
 		fprintf(stderr, "\t\t\t\t the flags may be added together.)\n");
 	}
@@ -1550,24 +1552,501 @@ void usage(const char *app, const char *error = 0, const bool verboseHelp = fals
 	exit(EXIT_BAD_ARG);
 }
 
-void processOSIS(std::istream& infile) {
-	typedef enum {
-		CS_NOT_IN_COMMENT,            // or seen starting "<"
-		CS_SEEN_STARTING_EXCLAMATION,
-		CS_SEEN_STARTING_HYPHEN,
-		CS_IN_COMMENT,
-		CS_SEEN_ENDING_HYPHEN,
-		CS_SEEN_SECOND_ENDING_HYPHEN,
-		CS_SEEN_ENDING_GREATER_THAN
-	} t_commentstate;
+// Maximum length for an entity (including & and ;), sufficient for valid XML/HTML entities
+constexpr size_t MAX_ENTITY_LENGTH = 32;
 
-	typedef enum {
-		ET_NUM,
-		ET_HEX,
-		ET_CHAR,
-		ET_NONE,
-		ET_ERR
-	} t_entitytype;
+// Enum for entity types
+enum class EntityType { START, NUM_HASH, NUM_DEC, NUM_HEX, CHAR, ERR };
+
+enum class CommentState {
+	START,         // Not in a comment or have seen '<'
+	SLAM,          // Seen '<!'
+	DASH1,         // Seen '<!-'
+	COMMENT,       // Having seen '<--' inside comment content
+	END_DASH1,     // Seen '-' in comment
+	END_DASH2      // Seen '--' in comment
+};
+
+/**
+ * @brief Handles XML comment parsing for a single character at a time.
+ * @param c The current character to process.
+ * @param currentOsisID The current OSIS ID for error reporting.
+ * @param incomment Whether currently inside a comment.
+ * @param commentstate The current comment parsing state.
+ * @param token The token buffer to append characters during comment start.
+ * @return true if the character is consumed (continue loop), false otherwise.
+ */
+bool handleComment(unsigned char c, const char* currentOsisID, bool& intoken, bool& incomment, CommentState& commentstate, SWBuf& token) {
+	if (!incomment) {
+		switch (commentstate) {
+		case CommentState::START:
+			if (c == '!') {
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "Found <!" << std::endl;
+				}
+				commentstate = CommentState::SLAM;
+				token.append((char)c);
+				return true;
+			}
+			return false;
+
+		case CommentState::SLAM:
+			if (c == '-') {
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "Found <!-" << std::endl;
+				}
+				commentstate = CommentState::DASH1;
+				token.append((char)c);
+				return true;
+			}
+			commentstate = CommentState::START;
+			return false;
+
+		case CommentState::DASH1:
+			if (c == '-') { // having seen the second dash we are in the comment
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "Found <!-- Now in comment." << std::endl;
+				}
+				incomment = true;
+				commentstate = CommentState::COMMENT;
+				token.append((char)c);
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "In comment" << std::endl;
+				}
+				return true;
+			}
+			commentstate = CommentState::START;
+			return false;
+
+		default:
+			std::cout << identifyMsg("FATAL", "COMMENTS") << "Unknown commentstate on comment start: " << (int) commentstate << std::endl;
+			exit(EXIT_BAD_NESTING);
+		}
+	}
+	else {
+		switch (commentstate) {
+		case CommentState::COMMENT:
+			if (c == '-') {
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "Found - in comment." << std::endl;
+				}
+				commentstate = CommentState::END_DASH1;
+				return true;
+			}
+			// Ignore the character
+			return true;
+
+		case CommentState::END_DASH1:
+			if (c == '-') {
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "Found -- in comment." << std::endl;
+				}
+				commentstate = CommentState::END_DASH2;
+				return true;
+			}
+			// Ignore the character
+			commentstate = CommentState::COMMENT;
+			return true;
+
+		case CommentState::END_DASH2:
+			if (c == '>') { // having seen the --> we are done and return to the original state
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "Found --> comment ended." << std::endl;
+				}
+				intoken = false;
+				incomment = false;
+				commentstate = CommentState::START;
+				if (debug & DEBUG_PARSE) {
+					std::cout << identifyMsg("DEBUG", "COMMENTS") << "Out of comment" << std::endl;
+				}
+				return true;
+			}
+			// Ignore the character
+			commentstate = CommentState::COMMENT;
+			return true;
+
+		default:
+			std::cout << identifyMsg("FATAL", "COMMENTS") << "Unknown commentstate on comment end: " << (int) commentstate << std::endl;
+			exit(EXIT_BAD_NESTING);
+		}
+	}
+	return false; // Should never reach here
+}
+
+/**
+ * \brief Handles &apos; and &quot; entities, converting them to plain characters or keeping them based on attribute context.
+ *
+ * This function processes `&apos;` and `&quot;` entities, replacing them with `'` or `"` respectively when outside attributes
+ * or when used in attributes with non-matching quote characters (e.g., `&apos;` in a double-quoted attribute). It logs
+ * appropriate warning messages and updates the entityToken with the converted value.
+ *
+ * \param entityToken [in/out] The entity string (e.g., "&apos;" or "&quot;") to process; modified to the converted value (e.g., "'" or "&apos;").
+ * \param currentOsisID [in] The OSIS ID for context in warning messages.
+ * \param msgPrefix [in] Pre-formatted message prefix for logging (includes level, type, and OSIS ID).
+ * \param inattribute [in] True if the entity is within an attribute value, false otherwise.
+ * \param attrQuoteChar [in] The quote character (' or ") used in the attribute, or '\0' if not applicable.
+ * \param debug [in] Debug flags from osis2mod; logs if (debug & DEBUG_PARSE) is set.
+ *
+ * \note Logs warnings to std::cout if (debug & DEBUG_PARSE).
+ * \note Thread-safe as it does not modify shared state beyond std::cout.
+ */
+void handleQuoteEntity(SWBuf& entityToken, const char* currentOsisID, SWBuf& msgPrefix, bool inattribute, char attrQuoteChar) {
+	if (entityToken == "&apos;") {
+		if (!inattribute) {
+			if (debug & DEBUG_PARSE) {
+				std::cout << msgPrefix
+					  << "&apos; unnecessary outside attributes. Replacing with '."
+					  << std::endl;
+			}
+			entityToken = "'";
+		} else if (attrQuoteChar == '"') {
+			if (debug & DEBUG_PARSE) {
+				std::cout << msgPrefix
+					  << "&apos; unnecessary in double-quoted attributes. Replacing with '."
+					  << std::endl;
+			}
+			entityToken = "'";
+		} else if (attrQuoteChar == '\'') {
+			if (debug & DEBUG_PARSE) {
+				std::cout << msgPrefix
+					  << "&apos; only needed in single-quoted attributes. Consider double quotes." 
+					  << std::endl;
+			}
+		} else {
+			if (debug & DEBUG_PARSE) {
+				std::cout << identifyMsg("ERROR", "PARSE", currentOsisID)
+					  << "Invalid attrQuoteChar: "
+				 	  << attrQuoteChar
+					  << std::endl;
+			}
+		}
+	} else if (entityToken == "&quot;") {
+		if (!inattribute) {
+			if (debug & DEBUG_PARSE) {
+				std::cout << msgPrefix
+					  << "&quot; unnecessary outside attributes. Replacing with \"." 
+					  << std::endl;
+			}
+			entityToken = "\"";
+		} else if (attrQuoteChar == '\'') {
+			if (debug & DEBUG_PARSE) {
+				std::cout << msgPrefix
+					  << "&quot; unnecessary in single-quoted attributes. Replacing with \"." 
+					  << std::endl;
+			}
+			entityToken = "\"";
+		} else if (attrQuoteChar == '"') {
+			if (debug & DEBUG_PARSE) {
+				std::cout << msgPrefix
+			  		  << "&quot; only needed in double-quoted attributes. Consider single quotes."
+					  << std::endl;
+			}
+		} else {
+			if (debug & DEBUG_PARSE) {
+				std::cout << identifyMsg("ERROR", "PARSE", currentOsisID)
+					  << "Invalid attrQuoteChar: " 
+					  << attrQuoteChar 
+					  << std::endl;
+			}
+		}
+	}
+}
+
+/**
+ * \brief Converts a validated Unicode code point to its UTF-8 representation.
+ *
+ * This function takes a pre-parsed Unicode code point (1 to 0x10FFFF) and converts it to its UTF-8 encoded form,
+ * storing the result in entityToken. It handles single-byte, two-byte, three-byte, and four-byte UTF-8 sequences
+ * based on the code point value. The original entity string is provided for diagnostic logging.
+ *
+ * \param entityToken [in/out] The original entity string (e.g., "&#65;") for logging; modified to contain the UTF-8 encoded character(s).
+ * \param codepoint [in] The Unicode code point (1 to 0x10FFFF) to convert to UTF-8.
+ * \param msgPrefix [in] Pre-formatted message prefix for logging (includes level, type, and OSIS ID).
+ *
+ * \return Always returns true, as the codepoint is assumed to be valid.
+ *
+ * \note The codepoint must be pre-validated (1 to 0x10FFFF) by the caller to avoid undefined behavior.
+ * \note Logs conversion details to std::cout if (debug & DEBUG_PARSE).
+ * \note Thread-safe as it does not modify shared state beyond std::cout.
+ */
+void convertNumericEntityToUTF8(SWBuf& entityToken, long codepoint, SWBuf& msgPrefix) {
+	// Save original entity for logging
+	SWBuf originalEntity = entityToken;
+
+	// Convert to UTF-8
+	if (codepoint <= 0x7F) {
+		entityToken.setSize(1);
+		entityToken[0] = static_cast<char>(codepoint);
+	} else if (codepoint <= 0x7FF) {
+		entityToken.setSize(2);
+		entityToken[0] = 0xC0 | (codepoint >> 6);
+		entityToken[1] = 0x80 | (codepoint & 0x3F);
+	} else if (codepoint <= 0xFFFF) {
+		entityToken.setSize(3);
+		entityToken[0] = 0xE0 | (codepoint >> 12);
+		entityToken[1] = 0x80 | ((codepoint >> 6) & 0x3F);
+		entityToken[2] = 0x80 | (codepoint & 0x3F);
+	} else {
+		entityToken.setSize(4);
+		entityToken[0] = 0xF0 | (codepoint >> 18);
+		entityToken[1] = 0x80 | ((codepoint >> 12) & 0x3F);
+		entityToken[2] = 0x80 | ((codepoint >> 6) & 0x3F);
+		entityToken[3] = 0x80 | (codepoint & 0x3F);
+	}
+	if (debug & DEBUG_PARSE) {
+		std::cout << msgPrefix
+			  << "Converted numeric entity "
+			  << originalEntity
+			  << " to UTF-8 character "
+			  << entityToken
+			  << std::endl;
+	}
+}
+
+/**
+ * \brief Parses and processes XML/HTML entities in a character stream using a finite state automaton.
+ *
+ * This function processes a single character in the context of an XML/HTML entity, maintaining a finite state automaton
+ * to track entity parsing states (START, NUM_HASH, NUM_DEC, NUM_HEX, CHAR, ERR). It handles named entities (e.g., &amp;),
+ * numeric entities (e.g., &#65;, &#x41;), and malformed entities. Special numeric entities (e.g., &#38; to &amp;) are
+ * converted to named entities, while others are converted to UTF-8. The function updates the entityToken and appends
+ * results to either the text or token buffer based on intoken. Malformed entities are replaced with &amp; followed by
+ * the invalid sequence.
+ *
+ * \param curChar [in] The current character to process.
+ * \param inentity [in/out] True if currently parsing an entity (starts with '&'), false otherwise.
+ * \param inWhitespace [in/out] True if the parser is in a whitespace sequence, reset when an entity starts.
+ * \param entitytype [in/out] The current state of the entity parser (START, NUM_HASH, NUM_DEC, NUM_HEX, CHAR, ERR).
+ * \param entityToken [in/out] The current entity being built (e.g., "&amp;" or "&#65;"); modified with the converted value.
+ * \param token [in/out] Buffer for entity output if intoken is true (e.g., within a tag).
+ * \param text [in/out] Buffer for entity output if intoken is false (e.g., plain text).
+ * \param intoken [in] True if the entity is within a token (e.g., tag name or attribute), false for plain text.
+ * \param inattribute [in] True if the entity is within an attribute value, false otherwise.
+ * \param attrQuoteChar [in] The quote character (' or ") used in the attribute, or '\0' if not applicable.
+ * \param currentOsisID [in] The OSIS ID for context in warning messages.
+ *
+ * \return True if the character was consumed by the entity parser, false otherwise.
+ *
+ * \note Logs warnings and errors to std::cout if (debug & DEBUG_PARSE).
+ * \note Thread-safe as long as inentity, inWhitespace, entitytype, entityToken, token, and text are not shared across threads without synchronization.
+ * \note Uses SWBuf::operator<< for shifting entityToken in error cases.
+ * \note Throws std::runtime_error for invalid entitytype values.
+ */
+bool handleEntity(char curChar, bool& inentity, bool& inWhitespace, EntityType& entitytype,
+		SWBuf& entityToken, SWBuf& token, SWBuf& text, bool intoken,
+		bool inattribute, char attrQuoteChar, const char* currentOsisID) {
+	if (!inentity && curChar != '&') {
+		return false; // Fast-path for non-entity characters
+	}
+	if (!inentity && curChar == '&') {
+		inentity = true;
+		inWhitespace = false;
+		entitytype = EntityType::START;
+		entityToken = "&";
+		return true;
+	}
+	if (inentity) {
+		if (entityToken.length() >= MAX_ENTITY_LENGTH) {
+			inentity = false;
+			entitytype = EntityType::ERR;
+			if (debug & DEBUG_PARSE) {
+				auto msgPrefix = identifyMsg("WARNING", "PARSE", currentOsisID);
+				std::cout << msgPrefix
+					  << "Entity length exceeds maximum ("
+					  << MAX_ENTITY_LENGTH
+					  << " characters), treating as malformed: "
+					  << entityToken
+					  << std::endl;
+			}
+		} else if (curChar == ';') {
+			inentity = false;
+		}
+		if (entitytype != EntityType::ERR) {
+			entityToken.append(curChar);
+		}
+		if (inentity) {
+			switch (entitytype) {
+			case EntityType::START:
+				if (curChar == '#') {
+					entitytype = EntityType::NUM_HASH;
+				} else if (std::isalnum(curChar)) {
+					entitytype = EntityType::CHAR;
+				} else {
+					inentity = false;
+					entitytype = EntityType::ERR;
+				}
+				break;
+			case EntityType::NUM_HASH:
+				if (curChar == 'x' || curChar == 'X') {
+					entitytype = EntityType::NUM_HEX;
+				} else if (std::isdigit(curChar)) {
+					entitytype = EntityType::NUM_DEC;
+				} else {
+					inentity = false;
+					entitytype = EntityType::ERR;
+				}
+				break;
+			case EntityType::NUM_DEC:
+				if (!std::isdigit(curChar)) {
+					inentity = false;
+					entitytype = EntityType::ERR;
+				}
+				break;
+			case EntityType::NUM_HEX:
+				if (!std::isxdigit(curChar)) {
+					inentity = false;
+					entitytype = EntityType::ERR;
+				}
+				break;
+			case EntityType::CHAR:
+				if (!std::isalnum(curChar)) {
+					inentity = false;
+					entitytype = EntityType::ERR;
+				}
+				break;
+			default:
+				std::cout << identifyMsg("FATAL", "PARSE") << "Unknown EntityType: " << (int) entitytype << std::endl;
+				exit(EXIT_BAD_NESTING);
+			}
+			return true;
+		}
+		if (!inentity) {
+			auto msgPrefix = identifyMsg("WARNING", "PARSE", currentOsisID);
+			// Handle numeric entities before switch
+			if (entitytype == EntityType::NUM_DEC || entitytype == EntityType::NUM_HEX) {
+				const char* p = entityToken.c_str();
+				p += 2; // Skip &#
+				int base = 10;
+				if (*p == 'x' || *p == 'X') {
+					base = 16;
+					++p;
+				}
+				char* end = nullptr;
+				errno = 0;
+				long codepoint = strtol(p, &end, base);
+				bool isValid = end && *end == ';' && codepoint > 0 && codepoint <= 0x10FFFF && errno != ERANGE;
+				if (isValid) {
+					switch (codepoint) {
+					case 38: // & -> &amp;
+						if (debug & DEBUG_PARSE) {
+							std::cout << msgPrefix
+								  << "Converted numeric entity "
+								  << entityToken
+								  << " to named entity &amp;"
+								  << std::endl;
+						}
+						entityToken = "&amp;";
+						entitytype = EntityType::CHAR;
+						break;
+					case 60: // < -> &lt;
+						if (debug & DEBUG_PARSE) {
+							std::cout << msgPrefix
+								  << "Converted numeric entity "
+								  << entityToken
+								  << " to named entity &lt;"
+								  << std::endl;
+						}
+						entityToken = "&lt;";
+						entitytype = EntityType::CHAR;
+						break;
+					case 62: // > -> &gt;
+						if (debug & DEBUG_PARSE) {
+							std::cout << msgPrefix
+								  << "Converted numeric entity "
+								  << entityToken
+								  << " to named entity &gt;"
+								  << std::endl;
+						}
+						entityToken = "&gt;";
+						entitytype = EntityType::CHAR;
+						break;
+					case 34: // " -> &quot;
+						if (debug & DEBUG_PARSE) {
+							std::cout << msgPrefix
+								  << "Converted numeric entity "
+								  << entityToken
+								  << " to named entity &quot;"
+								  << std::endl;
+						}
+						entityToken = "&quot;";
+						entitytype = EntityType::CHAR;
+						break;
+					case 39: // ' -> &apos;
+						if (debug & DEBUG_PARSE) {
+							std::cout << msgPrefix
+								  << "Converted numeric entity "
+								  << entityToken
+								  << " to named entity &apos;"
+								  << std::endl;
+						}
+						entityToken = "&apos;";
+						entitytype = EntityType::CHAR;
+						break;
+					default:
+						// Non-special codepoints go to UTF-8 conversion
+						break;
+					}
+				} else {
+					if (debug & DEBUG_PARSE) {
+						std::cout << msgPrefix
+							  << "Invalid numeric entity, codepoint out of range or malformed: " 
+							  << entityToken
+							  << std::endl;
+					}
+					entitytype = EntityType::ERR;
+				}
+				// Handle non-special valid codepoints
+				if (entitytype == EntityType::NUM_DEC || entitytype == EntityType::NUM_HEX) {
+					convertNumericEntityToUTF8(entityToken, codepoint, msgPrefix);
+				}
+			}
+			switch (entitytype) {
+			case EntityType::ERR:
+				entityToken << 1;
+				if (debug & DEBUG_PARSE) {
+					std::cout << msgPrefix
+						  << "Malformed entity, replacing with &amp;" 
+						  << entityToken
+						  << std::endl;
+				}
+				(intoken ? token : text).append("&amp;").append(entityToken);
+				break;
+			case EntityType::NUM_HEX:
+			case EntityType::NUM_DEC:
+				(intoken ? token : text).append(entityToken);
+				break;
+			case EntityType::CHAR:
+				if (entityToken != "&amp;" && entityToken != "&lt;" && 
+				    entityToken != "&gt;" && entityToken != "&quot;" && 
+				    entityToken != "&apos;") {
+					if (debug & DEBUG_PARSE) {
+						std::cout << msgPrefix 
+							  << "XML only supports &amp;, &lt;, &gt;, &quot;, &apos;, found " 
+							  << entityToken
+							  << std::endl;
+					}
+					(intoken ? token : text).append(entityToken);
+				} else if (entityToken == "&apos;" || entityToken == "&quot;") {
+					handleQuoteEntity(entityToken, currentOsisID, msgPrefix, inattribute, attrQuoteChar);
+					(intoken ? token : text).append(entityToken);
+				} else {
+					(intoken ? token : text).append(entityToken);
+				}
+				break;
+			default:
+				(intoken ? token : text).append(entityToken);
+				break;
+			}
+			if (curChar == ';') {
+				return true;
+			}
+		}
+	}
+		
+	return false;
+}
+
+void processOSIS(std::istream& infile) {
 
 	activeOsisID[0] = '\0';
 
@@ -1584,14 +2063,14 @@ void processOSIS(std::istream& infile) {
 	SWBuf token;
 	SWBuf text;
 	bool incomment = false;
-	t_commentstate commentstate = CS_NOT_IN_COMMENT;
+	CommentState commentstate = CommentState::START;
 	bool intoken = false;
 	bool inWhitespace = false;
 	bool seeingSpace = false;
 	unsigned char curChar = '\0';
 	SWBuf entityToken;
 	bool inentity = false;
-	t_entitytype entitytype = ET_NONE;
+	EntityType entitytype = EntityType::START;
 	unsigned char attrQuoteChar = '\0';
 	bool inattribute = false;
 
@@ -1618,18 +2097,6 @@ void processOSIS(std::istream& infile) {
 		}
 		charPos++;
 
-		// Look for entities:
-		// These are of the form &#dddd;, &xHHHH; or &llll;
-		// where dddd is a sequence of digits
-		//       HHHH is a sequence of [A-Fa-f0-9]
-		//       llll is amp, lt, gt, quot or apos
-		//            but we will look for a sequence of [A-Za-z0-9]
-		// All but &amp;, &lt;, &gt;, &quot;, &apos; will produce a WARNING
-		// In the future:
-		//    &#dddd; and &xHHHH; should be converted to UTF-8,
-		//        with a WARNING if the text is not UTF-8
-		//    &llll; other than the xml standard 5 should produce a WARNING
-
 		// For entity diagnostics track whether the text is an attribute value
 		if (inattribute && (curChar == '\'' || curChar == '"')) {
 			if (attrQuoteChar == curChar) {
@@ -1640,185 +2107,15 @@ void processOSIS(std::istream& infile) {
 				attrQuoteChar = curChar;
 			}
 		}
+
 		if (intoken && curChar == '=') {
 			inattribute = true;
 			attrQuoteChar = '\0';
 		}
 
-		if (!inentity && curChar == '&') {
-			inentity = true;
-			inWhitespace = false;
-			entitytype = ET_NONE;
-			entityToken = "&";
-			continue;
+		if (handleEntity(curChar, inentity, inWhitespace, entitytype, entityToken, token, text, intoken, inattribute, attrQuoteChar, currentOsisID)) {
+			continue; // Character consumed, move to next
 		}
-
-		if (inentity) {
-			if (curChar == ';') {
-				inentity = false;
-			}
-			else {
-				switch (entitytype) {
-				    case ET_NONE:
-					// A hex entity cannot start with X in XML, but it can in HTML
-					// Allow for it here and complain later
-					if (curChar == 'x' || curChar == 'X') {
-						entitytype = ET_HEX;
-					}
-					else
-					if (curChar == '#') {
-						entitytype = ET_NUM;
-					}
-					else
-					if ((curChar >= 'A' && curChar <= 'Z') ||
-					    (curChar >= 'a' && curChar <= 'z') ||
-					    (curChar >= '0' && curChar <= '9')) {
-						entitytype = ET_CHAR;
-					}
-					else {
-						inentity = false;
-						entitytype = ET_ERR;
-					}
-					break;
-
-				    case ET_NUM :
-					if (!(curChar >= '0' && curChar <= '9')) {
-						inentity = false;
-						entitytype = ET_ERR;
-					}
-					break;
-				    case ET_HEX :
-					if ((curChar >= 'G' && curChar <= 'Z') ||
-					    (curChar >= 'g' && curChar <= 'z')) {
-						// Starts out as a HEX entity, but it isn't one
-						entitytype = ET_CHAR;
-					}
-					else
-					if (!((curChar >= 'A' && curChar <= 'F') ||
-					      (curChar >= 'a' && curChar <= 'f') ||
-					      (curChar >= '0' && curChar <= '9'))) {
-						inentity = false;
-						entitytype = ET_ERR;
-					}
-					break;
-				    case ET_CHAR :
-					if (!((curChar >= 'A' && curChar <= 'Z') ||
-					      (curChar >= 'a' && curChar <= 'z') ||
-					      (curChar >= '0' && curChar <= '9'))) {
-						inentity = false;
-						entitytype = ET_ERR;
-					}
-					break;
-				    default:
-					std::cout << identifyMsg("FATAL", "ENTITY", currentOsisID) << "Unknown entitytype on entity end: " << entitytype << std::endl;
-					exit(EXIT_BAD_NESTING);
-				}
-			}
-
-			if (entitytype != ET_ERR) {
-				entityToken.append((char) curChar);
-			}
-
-			// It is an entity, perhaps invalid, if curChar is ';', error otherwise
-			// Test to see if we now have an entity or a failure
-			// It may not be a valid entity.
-			if (!inentity) {
-				switch (entitytype) {
-				    case ET_ERR :
-					// Remove the leading &
-					entityToken << 1;
-					std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "malformed entity, replacing &" << entityToken << " with &amp;" << entityToken << std::endl;
-					if (intoken) {
-						token.append("&amp;");
-						token.append(entityToken);
-					}
-					else {
-						text.append("&amp;");
-						text.append(entityToken);
-					}
-					break;
-				    case ET_HEX :
-					if (entityToken[1] != 'x') {
-						std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "HEX entity must begin with &x, found " << entityToken << std::endl;
-					}
-					else {
-						std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "SWORD does not search HEX entities, found " << entityToken << std::endl;
-					}
-					break;
-				    case ET_CHAR :
-					if (strcmp(entityToken, "&amp;")  &&
-				            strcmp(entityToken, "&lt;")   &&
-				            strcmp(entityToken, "&gt;")   &&
-				            strcmp(entityToken, "&quot;") &&
-				            strcmp(entityToken, "&apos;")) {
-						std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "XML only supports 5 Character entities &amp;, &lt;, &gt;, &quot; and &apos;, found " << entityToken << std::endl;
-					}
-					else
-					if (!strcmp(entityToken, "&apos;")) {
-						std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "While valid for XML, XHTML does not support &apos;." << std::endl;
-						if (!inattribute) {
-							std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "&apos; is unnecessary outside of attribute values. Replacing with '. " << std::endl;
-							entityToken = "'";
-						}
-						else {
-							switch (attrQuoteChar) {
-							    case '"' :
-								std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "&apos; is unnecessary inside double quoted attribute values. Replacing with '. " << std::endl;
-								entityToken = "'";
-								break;
-							    case '\'' :
-								std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "&apos; is only needed within single quoted attribute values. Considering using double quoted attribute and replacing with '." << std::endl;
-								break;
-							}
-						}
-					}
-					else
-					if (!strcmp(entityToken, "&quot;")) {
-						std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "While valid for XML, &quot; is only needed within double quoted attribute values" << std::endl;
-						if (!inattribute) {
-							std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "&quot; is unnecessary outside of attribute values. Replace with \"." << std::endl;
-							entityToken = "\"";
-						}
-						else {
-							switch (attrQuoteChar) {
-							    case '"' :
-								std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "&quot; is only needed within double quoted attribute values. Considering using single quoted attribute and replacing with \"." << std::endl;
-								break;
-							    case '\'' :
-								std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "&quot; is unnecessary inside single quoted attribute values. Replace with \"." << std::endl;
-								entityToken = "\"";
-								break;
-							}
-						}
-					}
-					break;
-				    case ET_NUM :
-					std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "SWORD does not search numeric entities, found " << entityToken << std::endl;
-					break;
-				    case ET_NONE :
-				    default:
-					break;
-				}
-
-				// Put the entity into the stream.
-				if (intoken) {
-					token.append(entityToken);
-				}
-				else {
-					text.append(entityToken);
-				}
-
-				if (curChar == ';') {
-					// The character was handled, so go get the next one.
-					continue;
-				}
-			}
-			else {
-				// The character was handled, so go get the next one.
-				continue;
-			}
-		}
-
 
 		if (!intoken && curChar == '<') {
 			intoken = true;
@@ -1830,90 +2127,13 @@ void processOSIS(std::istream& infile) {
 
 		// Handle XML comments starting with "<!--", ending with "-->"
 		if (intoken && !incomment) {
-			switch (commentstate) {
-				case CS_NOT_IN_COMMENT :
-					if (curChar == '!') {
-						commentstate = CS_SEEN_STARTING_EXCLAMATION;
-						token.append((char) curChar);
-						continue;
-					} else {
-						break;
-					}
-
-				case CS_SEEN_STARTING_EXCLAMATION :
-					if (curChar == '-') {
-						commentstate = CS_SEEN_STARTING_HYPHEN;
-						token.append((char) curChar);
-						continue;
-					} else {
-						commentstate = CS_NOT_IN_COMMENT;
-						break;
-					}
-
-				case CS_SEEN_STARTING_HYPHEN :
-					if (curChar == '-') {
-						incomment = true;
-						commentstate = CS_IN_COMMENT;
-						token.append((char) curChar);
-
-						if (debug & DEBUG_OTHER) {
-							std::cout << identifyMsg("DEBUG", "COMMENTS") << "In comment" << std::endl;
-						}
-
-						continue;
-					} else {
-						commentstate = CS_NOT_IN_COMMENT;
-						break;
-					}
-
-				default:
-					std::cout << identifyMsg("FATAL", "COMMENTS") << "Unknown commentstate on comment start: " << commentstate << std::endl;
-					exit(EXIT_BAD_NESTING);
+			if (handleComment(curChar, currentOsisID, intoken, incomment, commentstate, token)) {
+				continue; // Character consumed, move to next
 			}
 		}
 
-		if (incomment) {
-			switch (commentstate) {
-				case CS_IN_COMMENT:
-					if (curChar == '-') {
-						commentstate = CS_SEEN_ENDING_HYPHEN;
-						continue;
-					} else {
-						// ignore the character
-						continue;
-					}
-
-				case CS_SEEN_ENDING_HYPHEN :
-					if (curChar == '-') {
-						commentstate = CS_SEEN_SECOND_ENDING_HYPHEN;
-						continue;
-					} else {
-						// ignore character
-						commentstate = CS_IN_COMMENT;
-						continue;
-					}
-
-				case CS_SEEN_SECOND_ENDING_HYPHEN :
-					if (curChar == '>') {
-						intoken = false;
-						incomment = false;
-						commentstate = CS_NOT_IN_COMMENT;
-
-						if (debug & DEBUG_OTHER) {
-							std::cout << identifyMsg("DEBUG", "COMMENTS") << "Out of comment" << std::endl;
-						}
-
-						continue;
-					} else {
-						// ignore character
-						commentstate = CS_IN_COMMENT;
-						continue;
-					}
-
-				default:
-					std::cout << identifyMsg("FATAL", "COMMENTS") << "Unknown commentstate on comment end: " << commentstate << std::endl;
-					exit(EXIT_BAD_NESTING);
-			}
+		if (incomment && handleComment(curChar, currentOsisID, intoken, incomment, commentstate, token)) {
+			continue; // Character consumed, move to next
 		}
 
 		// Outside of tokens merge adjacent whitespace
@@ -1953,9 +2173,9 @@ void processOSIS(std::istream& infile) {
 		}
 		else {
 			switch (curChar) {
-				case '>' : std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "> should be &gt;" << std::endl; text.append("&gt;"); break;
-				case '<' : std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "< should be &lt;" << std::endl; text.append("&lt;"); break;
-				default  : text.append((char) curChar); break;
+			case '>' : std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "> should be &gt;" << std::endl; text.append("&gt;"); break;
+			case '<' : std::cout << identifyMsg("WARNING", "PARSE", currentOsisID) << "< should be &lt;" << std::endl; text.append("&lt;"); break;
+			default  : text.append((char) curChar); break;
 			}
 		}
 	}
