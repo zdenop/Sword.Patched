@@ -8,7 +8,7 @@
 define([svnversion], esyscmd([
     SVN_VERSION=$(svnversion -n 2>/dev/null || true)
     if test -z "$SVN_VERSION" || test "$SVN_VERSION" = "Unversioned directory"; then
-        GIT_VERSION=$(git describe --tags --always 2>/dev/null || echo "Unknown-version")
+        GIT_VERSION=$(git describe --always --abbrev=5 --exclude '*' 2>/dev/null || echo "Unknown-version")
         echo "$GIT_VERSION"
     else
         echo "$SVN_VERSION"
