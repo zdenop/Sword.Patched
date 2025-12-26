@@ -1,0 +1,42 @@
+*~
+
+# Linux
+# ignore local configuration
+config.*
+config/*
+Makefile
+# Makefile.in
+*.m4
+depcomp
+install-sh
+ltmain.sh
+
+# ignore help scripts/files
+*.patch
+configure
+libtool
+stamp-h1
+config_auto.h
+Makefile.in
+
+# ignore compilation files
+build*
+/bin
+/cmake-*
+.deps
+.dirstamp
+.vscode/*
+/.libs
+*/.libs/*
+*/*/.deps/*
+*/*/.libs/*
+*.lo
+*.la
+*.o
+*.Plo
+*.a
+winbin/*
+*cache*/
+sword.pc
+sword.spec
+missing
