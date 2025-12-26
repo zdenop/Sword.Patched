@@ -143,7 +143,11 @@ char CURLHTTPTransport::getURL(const char *destPath, const char *sourceURL, SWBu
 		curl_easy_setopt(session, CURLOPT_NOPROGRESS, 0);
 		curl_easy_setopt(session, CURLOPT_PROGRESSDATA, &pd);
 		curl_easy_setopt(session, CURLOPT_FAILONERROR, 1L);
+#if LIBCURL_VERSION_NUM >= 0x072000 // 7.32.0 or later
+		curl_easy_setopt(session, CURLOPT_XFERINFOFUNCTION, my_httpfprogress);
+#else
 		curl_easy_setopt(session, CURLOPT_PROGRESSFUNCTION, my_httpfprogress);
+#endif
 
 		curl_easy_setopt(session, CURLOPT_DEBUGFUNCTION, myhttp_trace);
 		/* Set a pointer to our struct to pass to the callback */

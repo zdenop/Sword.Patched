@@ -125,7 +125,11 @@ char RTransportGDrive::getURL(const char *destPath, const char *sourceURL, SWBuf
 			curl_easy_setopt(session, CURLOPT_FTPPORT, "-");
 		curl_easy_setopt(session, CURLOPT_NOPROGRESS, 0);
 		curl_easy_setopt(session, CURLOPT_PROGRESSDATA, &pd);
+#if LIBCURL_VERSION_NUM >= 0x072000 // 7.32.0 or later
+		curl_easy_setopt(session, CURLOPT_XFERINFOFUNCTION, my_fprogress);
+#else
 		curl_easy_setopt(session, CURLOPT_PROGRESSFUNCTION, my_fprogress);
+#endif
 		curl_easy_setopt(session, CURLOPT_DEBUGFUNCTION, my_trace);
 		/* Set a pointer to our struct to pass to the callback */
 		curl_easy_setopt(session, CURLOPT_FILE, &ftpfile);
