@@ -26,5 +26,13 @@ sudo apt-get install libxapian-dev xapian-examples python3-xapian libxapian30 li
 ./configure --prefix=/usr --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz
 make
 sudo make install
+sudo ldconfig
+sudo make install_config
 ```
 
+### Test of installation
+
+```sh
+sudo installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom -sc -r CrossWire -ri CrossWire KJV
+/usr/bin/diatheke -b KJV -f plain -k Jn 11:35
+```

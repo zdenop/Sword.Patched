@@ -2,7 +2,7 @@
 
 This is an unofficial Git fork of [The SWORD Project](https://crosswire.org/sword/), originally developed in their [SVN repository](https://crosswire.org/svn/sword/trunk/).
 
-[Original README](README.org), [Original README for svn](RREADME.svn).
+[Original README](README.org), [Original README for svn](README.svn).
 
 ## Purpose
 
