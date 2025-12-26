@@ -29,7 +29,8 @@ git checkout master  # For patched version
 git checkout svn_trunk  # For official SVN mirror
 ```
 
-3. Follow the official [A quick start for getting the engine compiled](https://crosswire.org/sword/develop/index.jsp) for compilation.
+3. Follow the official [A quick start for getting the engine compiled](https://crosswire.org/sword/develop/index.jsp) for compilation. 
+For more detailes instruction see local [INSTALL.git.md](INSTALL.git.md) file.
 
 ## Contributing
 
