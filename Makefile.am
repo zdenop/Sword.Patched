@@ -37,6 +37,8 @@ pkgconfig_DATA = sword.pc
 $(pkgconfig_DATA): config.status
 endif
 
+MAINTAINERCLEANFILES = Makefile.in
+
 if INSTCONF
 sysconf_DATA = sword.conf
 sword.conf:

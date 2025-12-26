@@ -5,6 +5,9 @@ AM_CPPFLAGS += -I$(top_srcdir)/include/internal/regex
 endif
 LDADD = $(top_builddir)/lib/libsword.la
 
+maintainer-clean-local:
+	-rm -f Makefile.in
+
 SUBDIRS = cppunit testsuite
 
 noinst_PROGRAMS = utf8norm ciphertest keytest mgrtest parsekey versekeytest \
