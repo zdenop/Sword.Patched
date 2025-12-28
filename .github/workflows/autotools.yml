@@ -52,7 +52,7 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz --disable-tests CXX=${{matrix.config.cxx}} # --enable-examples
+      run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz --enable-tests CXX=${{matrix.config.cxx}} # --enable-examples
     - name: make
       run: make -j 4
     - name: install
