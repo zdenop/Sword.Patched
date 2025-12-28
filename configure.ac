@@ -182,12 +182,6 @@ if test x$with_bzip2 = xno; then
 	AM_CXXFLAGS="$AM_CXXFLAGS -DEXCLUDEBZIP2"
 fi
 
-if test x$with_xz  = xyes; then
-	AC_CHECK_LIB(lzma, lzma_easy_buffer_encode,,with_xz="no")
-else
-	with_xz="no"
-fi
-
 if test x$with_xz = xno; then
 	AM_CFLAGS="$AM_CFLAGS -DEXCLUDEXZ"
 	AM_CXXFLAGS="$AM_CXXFLAGS -DEXCLUDEXZ"
@@ -236,6 +230,23 @@ else
   use_pkgconfig=no
 fi
 
+
+# ---------------------------------------------------------------------
+# Find XZ / lzma using pkg-config
+# ---------------------------------------------------------------------
+if test x$with_xz  = xyes; then
+    PKG_CHECK_MODULES([XZ], [liblzma], [
+        with_xz="yes"
+        AC_DEFINE([HAVE_XZ], [1], [Define to 1 if you have XZ/LZMA support])
+        AM_CFLAGS="$AM_CFLAGS $XZ_CFLAGS"
+        AM_CXXFLAGS="$AM_CXXFLAGS $XZ_CFLAGS"
+        LIBS="$LIBS $XZ_LIBS"
+    ], [
+        with_xz="no"
+    ])
+else
+    with_xz="no"
+fi
 
 # ---------------------------------------------------------------------
 # Find ICU using pkg-config
