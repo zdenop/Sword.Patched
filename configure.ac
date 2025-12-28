@@ -171,20 +171,9 @@ if test x$enable_debug = xyes; then
     AM_CXXFLAGS="-O0 -Wall -Woverloaded-virtual"
   fi
 else
-  my_save_cxxflags="$CXXFLAGS"
-  CXXFLAGS=-Ofast
-  AC_MSG_CHECKING([whether CXX supports -Ofast])
-  AC_LANG_PUSH([C++])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
-      [AC_MSG_RESULT([yes])]
-      [AM_CFLAGS=-Ofast]
-      [AM_CXXFLAGS=-Ofast],
-      [AC_MSG_RESULT([no])]
-      [AM_CFLAGS=-O3]
-      [AM_CXXFLAGS=-O3],
-  )
-  CXXFLAGS="$my_save_cxxflags"
-  AC_LANG_POP([C++])
+  # Use -O3 -ffast-math which is the modern replacement for -Ofast and works on both GCC and Clang
+  AM_CFLAGS="-O3 -ffast-math"
+  AM_CXXFLAGS="-O3 -ffast-math -Woverloaded-virtual"
 fi
 
 AM_CFLAGS="$AM_CFLAGS -fPIC"
@@ -538,6 +527,7 @@ AC_SUBST(target_mingw32)
 
 AC_SUBST(CURL_LIBS)
 AC_SUBST(ICU_LIBS)
+AC_SUBST(ICU_CFLAGS)
 AC_SUBST(ICU_IOLIBS)
 AC_SUBST(CLUCENE_LIBS)
 
