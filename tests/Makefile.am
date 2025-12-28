@@ -33,6 +33,9 @@ if HAVE_ICU
 icutest_SOURCES = icutest.cpp
 translittest_SOURCES = translittest.cpp
 tlitmgrtest_SOURCES = tlitmgrtest.cpp
+icutest_LDADD = $(LDADD) $(ICU_LIBS)
+translittest_LDADD = $(LDADD) $(ICU_LIBS)
+tlitmgrtest_LDADD = $(LDADD) $(ICU_LIBS)
 endif
 
 if HAVE_LIBZ
