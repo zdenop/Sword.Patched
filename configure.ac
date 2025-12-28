@@ -433,7 +433,7 @@ if test x$with_xapian = xyes; then
     PKG_PROG_PKG_CONFIG([0.25])
     
     # Check for Xapian via pkg-config
-    PKG_CHECK_MODULES([XAPIAN], [xapian-core, xapian],
+    PKG_CHECK_MODULES([XAPIAN], [xapian-core],
         [
             with_xapian=yes
             AC_SUBST([XAPIAN_CFLAGS])
