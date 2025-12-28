@@ -1,0 +1,77 @@
+name: Autotools build
+# Run autotools build on Linux, MacOS and Windows
+
+on:
+#  push:
+#    branches: [ "master" ]
+#  pull_request:
+#    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  basictests:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: ubuntu-latest-gcc-autotools, os:  ubuntu-latest, cxx: g++ }
+          - { name: macos-latest-clang-autotools, os: macos-latest, cxx: clang++  }
+          - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
+
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v6
+
+    - name: Install dependencies on Linux
+      run: |
+           sudo apt-get update
+           sudo apt-get install ${{ matrix.config.cxx }} -y
+           sudo apt-get install autoconf-archive -y
+           sudo apt-get install libicu-dev libcurl4-openssl-dev -y
+           sudo apt-get install liblzma-dev lzma xz-utils libbz2-dev -y
+           sudo apt-get install libxapian-dev libclucene-dev -y
+           g++ --version
+      if: runner.os == 'Linux'
+
+    - name: Install dependencies on macOS
+      run: |
+           brew install autoconf automake libtool xapian bzip2
+           brew install autoconf-archive
+           brew reinstall xz
+           brew reinstall icu4c
+           if ! brew list curl &>/dev/null; then
+             brew install curl
+           fi
+           ln -s $(which glibtoolize) /usr/local/bin/libtoolize
+           clang++ --version
+           g++ --version
+      if: runner.os == 'macOS'
+
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz --disable-tests CXX=${{matrix.config.cxx}} # --enable-examples
+    - name: make
+      run: make -j 4
+    - name: install
+      run: |
+           sudo make install
+           sudo make install_config
+
+    - name: Register installed lib
+      run: |
+           sudo ldconfig
+      if: runner.os == 'Linux'
+
+    - name: tests
+      run: |
+           sudo installmgr --allow-internet-access-and-risk-tracing-and-jail-or-martyrdom -sc -r CrossWire -ri CrossWire KJV
+           diatheke -b KJV -o fmnx -k Jn 3:16
+
+# TODO
+   # - name: make check
+   #   run: make check
+   # - name: make distcheck
+   #   run: make distcheck
