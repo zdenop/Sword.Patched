@@ -296,7 +296,7 @@ if test x$with_icu = xyes; then
     PKG_PROG_PKG_CONFIG
 
     # Check for ICU libraries
-    PKG_CHECK_MODULES(ICU, icu-uc, [
+    PKG_CHECK_MODULES(ICU, [icu-uc icu-i18n], [
         ICU_LIBS="$ICU_LIBS"
         with_icu=yes
         AM_CXXFLAGS="$AM_CXXFLAGS $ICU_CFLAGS -D_ICU_"
@@ -416,12 +416,6 @@ else
 fi
 fi
 
-if test x$with_xapian = xyes; then
-	AC_LANG([C++])
-	AC_CHECK_LIB(xapian,main,,with_xapian="no")
-else
-	with_xapian="no"
-fi
 
 if test x$with_icuregex = xyes; then
 	if test x$with_icu = xno; then
@@ -434,6 +428,43 @@ else
 	with_icuregex="no"
 fi
 
+if test x$with_xapian = xyes; then
+    # Check for pkg-config
+    PKG_PROG_PKG_CONFIG([0.25])
+    
+    # Check for Xapian via pkg-config
+    PKG_CHECK_MODULES([XAPIAN], [xapian >= 1.0.0],
+        [
+            with_xapian=yes
+            AC_SUBST([XAPIAN_CFLAGS])
+            AC_SUBST([XAPIAN_LIBS])
+            # If you need these as regular variables too:
+            XAPIAN_CFLAGS="$XAPIAN_CFLAGS"
+            XAPIAN_LIBS="$XAPIAN_LIBS"
+        ],
+        [
+            with_xapian=no
+            AC_MSG_WARN([xapian not found via pkg-config, trying fallback check...])
+            # Fallback to the original check if pkg-config fails
+            AC_LANG_PUSH([C++])
+            AC_CHECK_LIB([xapian], [main],
+                [
+                    with_xapian=yes
+                    XAPIAN_LIBS="-lxapian"
+                    AC_SUBST([XAPIAN_LIBS])
+                ],
+                [
+                    with_xapian=no
+                    AC_MSG_ERROR([xapian library not found. Install xapian development package.])
+                ],
+                []
+            )
+            AC_LANG_POP([C++])
+        ]
+    )
+else
+    with_xapian=no
+fi
 if test x$with_xapian = xyes; then
 	AM_CFLAGS="$AM_CFLAGS -DUSEXAPIAN"
 	AM_CXXFLAGS="$AM_CXXFLAGS -DUSEXAPIAN"
