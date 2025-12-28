@@ -433,7 +433,7 @@ if test x$with_xapian = xyes; then
     PKG_PROG_PKG_CONFIG([0.25])
     
     # Check for Xapian via pkg-config
-    PKG_CHECK_MODULES([XAPIAN], [xapian >= 1.0.0],
+    PKG_CHECK_MODULES([XAPIAN], [xapian-core, xapian],
         [
             with_xapian=yes
             AC_SUBST([XAPIAN_CFLAGS])
@@ -455,7 +455,7 @@ if test x$with_xapian = xyes; then
                 ],
                 [
                     with_xapian=no
-                    AC_MSG_ERROR([xapian library not found. Install xapian development package.])
+                    AC_MSG_WARN([xapian library not found. Install xapian development package.])
                 ],
                 []
             )
@@ -465,6 +465,7 @@ if test x$with_xapian = xyes; then
 else
     with_xapian=no
 fi
+
 if test x$with_xapian = xyes; then
 	AM_CFLAGS="$AM_CFLAGS -DUSEXAPIAN"
 	AM_CXXFLAGS="$AM_CXXFLAGS -DUSEXAPIAN"
