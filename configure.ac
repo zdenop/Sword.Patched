@@ -469,6 +469,7 @@ fi
 if test x$with_xapian = xyes; then
 	AM_CFLAGS="$AM_CFLAGS -DUSEXAPIAN"
 	AM_CXXFLAGS="$AM_CXXFLAGS -DUSEXAPIAN"
+    LIBS="$LIBS $XZ_LIBS"
 	if test "x$with_clucene" = xno; then
 		with_clucene="no"
 	else
