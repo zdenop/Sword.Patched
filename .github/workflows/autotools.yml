@@ -37,8 +37,6 @@ jobs:
 
     - name: Install dependencies on macOS
       run: |
-           # brew install clucene
-           sudo curl -fsSL https://clucene.sourceforge.net/installer/2.3.2/CluceneInstaller-2.3.2.dmg
            brew install autoconf automake libtool xapian bzip2
            brew install autoconf-archive
            brew reinstall xz
