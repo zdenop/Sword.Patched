@@ -16,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # - { name: ubuntu-latest-gcc-autotools, os:  ubuntu-latest, cxx: g++ }
+          - { name: ubuntu-latest-gcc-autotools, os:  ubuntu-latest, cxx: g++ }
           - { name: macos-latest-clang-autotools, os: macos-latest, cxx: clang++  }
-          # - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
+          - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
 
     steps:
     - name: Checkout Source
