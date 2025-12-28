@@ -1,3 +1,6 @@
+[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://github.com/zdenop/Sword.Patched/blob/master/LICENSE)
+[![Autotools build](https://github.com/zdenop/Sword.Patched/actions/workflows/autotols.yml/badge.svg)](https://github.com/zdenop/Sword.Patched/actions/workflows/autotols.yml)
+
 # Sword.Patched
 
 This is an unofficial Git fork of [The SWORD Project](https://crosswire.org/sword/), originally developed in their [SVN repository](https://crosswire.org/svn/sword/trunk/).
