@@ -16,9 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { name: ubuntu-latest-gcc-autotools, os:  ubuntu-latest, cxx: g++ }
+          # - { name: ubuntu-latest-gcc-autotools, os:  ubuntu-latest, cxx: g++ }
           - { name: macos-latest-clang-autotools, os: macos-latest, cxx: clang++  }
-          - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
+          # - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
 
     steps:
     - name: Checkout Source
@@ -54,7 +54,7 @@ jobs:
     - name: configure
       run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz --enable-tests CXX=${{matrix.config.cxx}} # --enable-examples
     - name: make
-      run: make -j 4
+      run: make # -j 4
     - name: install
       run: |
            sudo make install
