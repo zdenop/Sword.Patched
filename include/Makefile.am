@@ -86,8 +86,11 @@ pkginclude_HEADERS += $(swincludedir)/rawverse4.h
 if USE_INTERNAL_REGEX
 pkginclude_HEADERS += $(swincludedir)/internal/regex/regex.h
 endif
+pkginclude_HEADERS += $(swincludedir)/internal/unzip/ioapi.h
+pkginclude_HEADERS += $(swincludedir)/internal/unzip/unzip.h
 pkginclude_HEADERS += $(swincludedir)/roman.h
 pkginclude_HEADERS += $(swincludedir)/rtfhtml.h
+pkginclude_HEADERS += $(swincludedir)/rtfplain.h
 pkginclude_HEADERS += $(swincludedir)/sapphire.h
 pkginclude_HEADERS += $(swincludedir)/scsuutf8.h
 pkginclude_HEADERS += $(swincludedir)/strkey.h
@@ -115,6 +118,7 @@ pkginclude_HEADERS += $(swincludedir)/swoptfilter.h
 pkginclude_HEADERS += $(swincludedir)/swobject.h
 pkginclude_HEADERS += $(swincludedir)/swsearchable.h
 pkginclude_HEADERS += $(swincludedir)/swtext.h
+pkginclude_HEADERS += $(swincludedir)/swtoupperdata.h
 pkginclude_HEADERS += $(swincludedir)/swversion.h
 pkginclude_HEADERS += $(swincludedir)/sysdata.h
 
@@ -167,7 +171,9 @@ pkginclude_HEADERS += $(swincludedir)/versekey.h
 pkginclude_HEADERS += $(swincludedir)/versetreekey.h
 pkginclude_HEADERS += $(swincludedir)/zcom.h
 pkginclude_HEADERS += $(swincludedir)/zcom4.h
+pkginclude_HEADERS += $(swincludedir)/zconf.h
 pkginclude_HEADERS += $(swincludedir)/zipcomprs.h
+pkginclude_HEADERS += $(swincludedir)/zlib.h
 pkginclude_HEADERS += $(swincludedir)/bz2comprs.h
 pkginclude_HEADERS += $(swincludedir)/xzcomprs.h
 pkginclude_HEADERS += $(swincludedir)/zld.h
@@ -195,4 +201,3 @@ pkginclude_HEADERS += $(swincludedir)/canon_null.h
 pkginclude_HEADERS += $(swincludedir)/canon_segond.h
 pkginclude_HEADERS += $(swincludedir)/canon_calvin.h
 pkginclude_HEADERS += $(swincludedir)/canon_darbyfr.h
-

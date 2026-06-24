@@ -1,4 +1,4 @@
-commondir = $(top_srcdir)/src/modules/common
+commondir = ../src/modules/common
 
 libsword_la_SOURCES += $(commondir)/rawstr.cpp
 libsword_la_SOURCES += $(commondir)/rawstr4.cpp

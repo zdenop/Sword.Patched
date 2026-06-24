@@ -1,4 +1,4 @@
-genbookdir = $(top_srcdir)/src/modules/genbook
+genbookdir = ../src/modules/genbook
 
 libsword_la_SOURCES += $(genbookdir)/swgenbook.cpp
 

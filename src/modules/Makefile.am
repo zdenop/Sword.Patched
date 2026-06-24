@@ -1,4 +1,4 @@
-modulesdir = $(top_srcdir)/src/modules
+modulesdir = ../src/modules
 
 libsword_la_SOURCES += $(modulesdir)/swmodule.cpp
 

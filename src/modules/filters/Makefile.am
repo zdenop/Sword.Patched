@@ -1,4 +1,4 @@
-filtersdir = $(top_srcdir)/src/modules/filters
+filtersdir = ../src/modules/filters
 
 libsword_la_SOURCES += $(filtersdir)/swbasicfilter.cpp
 libsword_la_SOURCES += $(filtersdir)/swoptfilter.cpp

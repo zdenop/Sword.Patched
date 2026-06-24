@@ -1,4 +1,4 @@
-keysdir = $(top_srcdir)/src/keys
+keysdir = ../src/keys
 
 libsword_la_SOURCES += $(keysdir)/swkey.cpp
 libsword_la_SOURCES += $(keysdir)/listkey.cpp

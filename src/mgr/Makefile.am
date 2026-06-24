@@ -1,4 +1,4 @@
-mgrdir = $(top_srcdir)/src/mgr
+mgrdir = ../src/mgr
 
 if CONFDEF
 globdef = -DGLOBCONFPATH=\"${globalconfdir}/sword.conf\"

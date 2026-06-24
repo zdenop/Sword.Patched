@@ -50,6 +50,7 @@ clean-generic:
 endif
 
 noinst_PROGRAMS = buildtest
+buildtest_CPPFLAGS = -I$(top_srcdir)/include
 buildtest_SOURCES = buildtest.cpp
 buildtest_LDADD = $(top_builddir)/lib/libsword.la
 
@@ -81,6 +82,8 @@ install-data-am: installlocaleDATA installmodsDATA install-pkgconfigDATA
 
 uninstall-am: uninstall-info-am uninstalllocaleDATA \
 	uninstallmodsDATA uninstall-sysconfDATA uninstall-pkgconfigDATA
+
+uninstall-info-am:
 
 register:
 	@echo ""

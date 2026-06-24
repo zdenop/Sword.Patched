@@ -1,4 +1,4 @@
-commentsdir = $(top_srcdir)/src/modules/comments
+commentsdir = ../src/modules/comments
 
 libsword_la_SOURCES += $(commentsdir)/swcom.cpp
 

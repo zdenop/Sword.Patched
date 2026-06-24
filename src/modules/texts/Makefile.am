@@ -1,4 +1,4 @@
-textsdir = $(top_srcdir)/src/modules/texts
+textsdir = ../src/modules/texts
 
 libsword_la_SOURCES += $(textsdir)/swtext.cpp
 
