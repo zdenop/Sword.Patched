@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { icon: '🟦', sys: mingw64, package_prefix: mingw-w64-x86_64 }
+          # - { icon: '🟦', sys: mingw64, package_prefix: mingw-w64-x86_64 }
           - { icon: '🟨', sys: ucrt64, package_prefix: mingw-w64-ucrt-x86_64 } 
     defaults:
       run:
