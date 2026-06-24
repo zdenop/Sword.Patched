@@ -69,7 +69,7 @@ dnl Turn on C++17 or newer
 dnl **********************
 
 CPLUSPLUS=
-AX_CHECK_COMPILE_FLAG([-std=c++17], [CPLUSPLUS=17], [], [$WERROR])
+AX_CHECK_COMPILE_FLAG([-std=c++17], [CPLUSPLUS=17])
 if test -z "$CPLUSPLUS"; then
   AC_MSG_WARN([Your compiler does not have the necessary C++17 support! Build can failed.])
 fi
