@@ -51,7 +51,7 @@ endif
 
 noinst_PROGRAMS = buildtest
 buildtest_SOURCES = buildtest.cpp
-buildtest_LDADD = $(top_builddir)/lib/libsword.la @SWORDALLOCLIBS@
+buildtest_LDADD = $(top_builddir)/lib/libsword.la
 
 include locales.d/Makefile.am
 include samples/Makefile.am
