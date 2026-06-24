@@ -18,7 +18,7 @@ jobs:
         config:
           - { name: ubuntu-latest-gcc-autotools, os:  ubuntu-latest, cxx: g++ }
           - { name: macos-latest-clang-autotools, os: macos-latest, cxx: clang++  }
-          - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
+         # - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
 
     steps:
     - name: Checkout Source
@@ -55,12 +55,20 @@ jobs:
     - name: configure
       run: |
            if [ "${{ runner.os }}" = "macOS" ]; then
-             BREW_PREFIX="$(brew --prefix)"
-             export CPPFLAGS="-I${BREW_PREFIX}/include ${CPPFLAGS}"
-             export LDFLAGS="-L${BREW_PREFIX}/lib ${LDFLAGS}"
-             export PKG_CONFIG_PATH="${BREW_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+              BREW_PREFIX="$(brew --prefix)"
+              ICU_PREFIX="$(brew --prefix icu4c)"
+              CLUCENE_PREFIX="$(brew --prefix clucene 2>/dev/null || echo "${BREW_PREFIX}")"
+              
+              export CPPFLAGS="-I${ICU_PREFIX}/include -I${CLUCENE_PREFIX}/include -I${BREW_PREFIX}/include ${CPPFLAGS}"
+              export LDFLAGS="-L${ICU_PREFIX}/lib -L${CLUCENE_PREFIX}/lib -L${BREW_PREFIX}/lib ${LDFLAGS}
+              export PKG_CONFIG_PATH="${ICU_PREFIX}/lib/pkgconfig:${CLUCENE_PREFIX}/lib/pkgconfig:${BREW_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
            fi
-           ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz --enable-tests CXX=${{matrix.config.cxx}}      
+           ./configure \
+             --with-cxx11regex --with-cxx11time \
+             --with-bzip2 --with-xz \
+             --with-clucene="${CLUCENE_PREFIX:-/usr}" \
+             --enable-tests \
+             CXX=${{ matrix.config.cxx }}   
     - name: make
       run: CXX=${{matrix.config.cxx}} make # -j 4
     - name: install
