@@ -21,47 +21,37 @@
 /***************************************************************************/
 // changes made by Lorn Potter <llornkcor@handhelds.org>
 // 
-#if defined(__unix__) || defined(__VMS)
-#include <unistd.h>
-#endif
+
 #if defined(_WIN32)
+
+/* Windows (MinGW, MSVC, etc.) */
 #include <windows.h>
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <ctype.h>
-
-#if defined(__unix__)
-
-#include <sys/types.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-
-#elif defined(VMS)
-
-#include <types.h>
-#include <socket.h>
-#include <in.h>
-#include <netdb.h>
-#include <inet.h>
-
-#elif defined(_WIN32)
-
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
 #ifndef socklen_t
 #define socklen_t int
 #endif
 
+#if defined(__unix__) || defined(__VMS)
+#include <unistd.h>
+#include <netdb.h>
+#endif
+
+#if defined(__unix__)
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#elif defined(VMS)
+#include <types.h>
+#include <socket.h>
+#include <in.h>
+#include <inet.h>
 #endif
 
 #define BUILDING_LIBRARY
