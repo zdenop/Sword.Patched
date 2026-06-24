@@ -58,7 +58,6 @@ jobs:
               BREW_PREFIX="$(brew --prefix)"
               ICU_PREFIX="$(brew --prefix icu4c)"
               CLUCENE_PREFIX="$(brew --prefix clucene 2>/dev/null || echo "${BREW_PREFIX}")"
-              
               export CPPFLAGS="-I${ICU_PREFIX}/include -I${CLUCENE_PREFIX}/include -I${BREW_PREFIX}/include ${CPPFLAGS}"
               export LDFLAGS="-L${ICU_PREFIX}/lib -L${CLUCENE_PREFIX}/lib -L${BREW_PREFIX}/lib ${LDFLAGS}
               export PKG_CONFIG_PATH="${ICU_PREFIX}/lib/pkgconfig:${CLUCENE_PREFIX}/lib/pkgconfig:${BREW_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
