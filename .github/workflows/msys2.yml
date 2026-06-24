@@ -39,6 +39,7 @@ jobs:
           git
           make
           autoconf
+          autoconf-archive
           automake
           libtool
           python3
