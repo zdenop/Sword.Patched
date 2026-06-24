@@ -1,3 +1,3 @@
-AUTOMAKE_OPTIONS = 1.6
+AUTOMAKE_OPTIONS = foreign
 
 SUBDIRS = cmdline tasks
