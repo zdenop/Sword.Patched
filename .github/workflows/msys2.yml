@@ -12,7 +12,12 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { icon: '🟦', sys: mingw64, package_prefix: mingw-w64-x86_64 }
+          - { icon: '🟨', sys: ucrt64, package_prefix: mingw-w64-ucrt-x86_64 } 
     defaults:
       run:
         # This is critical: it tells the runner to execute the following 
@@ -21,7 +26,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
@@ -32,34 +37,47 @@ jobs:
         install: >-
           base-devel
           autotools
-          mingw-w64-ucrt-x86_64-gcc
           make
-          mingw-w64-ucrt-x86_64-zlib
-          mingw-w64-ucrt-x86_64-bzip2
-          mingw-w64-ucrt-x86_64-xz
-          mingw-w64-ucrt-x86_64-icu
-          mingw-w64-ucrt-x86_64-curl
-          mingw-w64-ucrt-x86_64-clucene
-          mingw-w64-ucrt-x86_64-xapian-core
+          ${{ matrix.package_prefix }}-gcc
+          ${{ matrix.package_prefix }}-zlib
+          ${{ matrix.package_prefix }}-bzip2
+          ${{ matrix.package_prefix }}-xz
+          ${{ matrix.package_prefix }}-icu
+          ${{ matrix.package_prefix }}-curl
+          ${{ matrix.package_prefix }}-clucene
+          ${{ matrix.package_prefix }}-xapian-core
+
+    - name: '️#️⃣ get-hash'
+      id: hash
+      run: echo "sha_short=$(git describe --tags)" >> $GITHUB_OUTPUT  
 
     - name: Generate Configure Script (Autoreconf)
       # Run this if your repo stores configure.ac/am but not the generated 'configure' script
       run: ./autogen.sh  # autoreconf -fiv
 
-    - name: Configure Project
+    - name: '🔧 Configure Project' 
       # Add any configure flags here (e.g., --enable-debug)
-      run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz # CXXFLAGS="-Dstricmp=_stricmp"
+      run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz # CXXFLAGS="-Dstricmp=_stricmp"  'CXXFLAGS=-g -O2 -static'
 
     - name: Upload config.log
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: config.log
         path: config.log
         
-    - name: Build Project
-      run: make
-
+    - name: '🚧 Build and install jbig2enc'
+      run: |
+           # make LDFLAGS="-all-static"
+           make
+           make install  
+      
+    - name: '⏫ Upload Build Results'
+      uses: actions/upload-artifact@v7
+      with:
+        name: sword_${{ steps.hash.outputs.sha_short }}-${{matrix.sys}}
+        path: sword__${{ steps.hash.outputs.sha_short }}-${{matrix.sys}}.zip
+        retention-days: 5       
 
     - name: Run Tests (Optional)
       run: make check
