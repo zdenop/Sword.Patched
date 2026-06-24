@@ -2,10 +2,10 @@ name: Autotools build
 # Run autotools build on Linux, MacOS and Windows
 
 on:
-#  push:
-#    branches: [ "master" ]
-#  pull_request:
-#    branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
         config:
           - { name: ubuntu-latest-gcc-autotools, os:  ubuntu-latest, cxx: g++ }
           - { name: macos-latest-clang-autotools, os: macos-latest, cxx: clang++  }
-         # - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
+          - { name: macos-latest-gcc-autotools, os: macos-latest, cxx: g++  }
 
     steps:
     - name: Checkout Source
@@ -88,5 +88,5 @@ jobs:
     - name: make check
       run: make check
 # TODO
-    # - name: make distcheck
-    #   run: make distcheck
+    - name: make distcheck
+      run: make distcheck
