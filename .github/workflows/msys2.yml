@@ -1,0 +1,70 @@
+name: MSYS2 Autotools Build
+# msys2 build for The Sword.Patched Project
+on:
+  # push:
+  #  branches: [ "master" ]
+  # pull_request:
+  #  branches: [ "master" ]
+  workflow_dispatch:
+#  schedule:
+#    - cron: 0 17 * * *
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        # This is critical: it tells the runner to execute the following 
+        # commands inside the MSYS2 shell (UCRT64) rather than PowerShell/CMD.
+        shell: msys2 {0}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        # UCRT64 is the modern 64-bit environment. Use CLANG64 if you prefer Clang.
+        msystem: UCRT64
+        # Install core build tools and compilers
+        install: >-
+          base-devel
+          autotools
+          gcc
+          make
+          zlib
+          bzip2
+          xz
+          icu
+          curl
+          clucene
+          xapian-core
+
+    - name: Install dependencies
+      run: |
+        pacman --noconfirm -S mingw-w64-ucrt-x86_64-clucene
+        pacman --noconfirm -S mingw-w64-ucrt-x86_64-xapian-core
+  
+    - name: Generate Configure Script (Autoreconf)
+      # Run this if your repo stores configure.ac/am but not the generated 'configure' script
+      run: ./autogen.sh  # autoreconf -fiv
+
+    - name: Configure Project
+      # Add any configure flags here (e.g., --enable-debug)
+      run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz # CXXFLAGS="-Dstricmp=_stricmp"
+
+    - name: Upload config.log
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: config.log
+        path: config.log
+        
+    - name: Build Project
+      run: make
+
+
+    - name: Run Tests (Optional)
+      run: make check
