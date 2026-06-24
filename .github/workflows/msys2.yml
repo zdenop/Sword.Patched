@@ -31,21 +31,30 @@ jobs:
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
-        # UCRT64 is the modern 64-bit environment. Use CLANG64 if you prefer Clang.
-        msystem: UCRT64
-        # Install core build tools and compilers
+        msystem: ${{ matrix.sys }}
+        update: true
+        # Install core build tools and compilers        
         install: >-
           base-devel
-          autotools
+          git
           make
-          ${{ matrix.package_prefix }}-gcc
-          ${{ matrix.package_prefix }}-zlib
-          ${{ matrix.package_prefix }}-bzip2
-          ${{ matrix.package_prefix }}-xz
-          ${{ matrix.package_prefix }}-icu
-          ${{ matrix.package_prefix }}-curl
-          ${{ matrix.package_prefix }}-clucene
-          ${{ matrix.package_prefix }}-xapian-core
+          autoconf
+          automake
+          libtool
+          python3
+          pkg-config
+          zip
+          binutils
+        pacboy: >-
+          zlib:x
+          bzip2:x
+          xz:x
+          icu:x
+          curl:x
+          clucene:x          
+          xapian-core:x
+          gcc:p       
+    - run: gcc --version
 
     - name: '️#️⃣ get-hash'
       id: hash
