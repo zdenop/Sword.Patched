@@ -32,21 +32,16 @@ jobs:
         install: >-
           base-devel
           autotools
-          gcc
+          mingw-w64-ucrt-x86_64-gcc
           make
-          zlib
-          bzip2
-          xz
-          icu
-          curl
-          clucene
-          xapian-core
+          mingw-w64-ucrt-x86_64-zlib
+          mingw-w64-ucrt-x86_64-bzip2
+          mingw-w64-ucrt-x86_64-xz
+          mingw-w64-ucrt-x86_64-icu
+          mingw-w64-ucrt-x86_64-curl
+          mingw-w64-ucrt-x86_64-clucene
+          mingw-w64-ucrt-x86_64-xapian-core
 
-    - name: Install dependencies
-      run: |
-        pacman --noconfirm -S mingw-w64-ucrt-x86_64-clucene
-        pacman --noconfirm -S mingw-w64-ucrt-x86_64-xapian-core
-  
     - name: Generate Configure Script (Autoreconf)
       # Run this if your repo stores configure.ac/am but not the generated 'configure' script
       run: ./autogen.sh  # autoreconf -fiv
