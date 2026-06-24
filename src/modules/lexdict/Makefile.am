@@ -1,4 +1,4 @@
-lexdictdir = $(top_srcdir)/src/modules/lexdict
+lexdictdir = ../src/modules/lexdict
 
 libsword_la_SOURCES += $(lexdictdir)/swld.cpp
 

@@ -4,7 +4,7 @@ else
 AM_CXXFLAGS += -DNO_VSNPRINTF
 endif
 
-utilfunsdir = $(top_srcdir)/src/utilfuns
+utilfunsdir = ../src/utilfuns
 libsword_la_SOURCES += $(utilfunsdir)/swobject.cpp
 libsword_la_SOURCES += $(utilfunsdir)/utilstr.cpp
 libsword_la_SOURCES += $(utilfunsdir)/utilxml.cpp

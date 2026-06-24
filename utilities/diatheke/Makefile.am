@@ -1,7 +1,9 @@
 AUTOMAKE_OPTIONS = 1.6
 
 if USE_INTERNAL_REGEX
-AM_CPPFLAGS = -I$(top_srcdir)/include/internal/regex
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/include/internal/regex
+else
+AM_CPPFLAGS = -I$(top_srcdir)/include
 endif
 LDADD = $(top_builddir)/lib/libsword.la
 
