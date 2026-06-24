@@ -29,6 +29,7 @@ jobs:
            sudo apt-get update
            sudo apt-get install ${{ matrix.config.cxx }} -y
            sudo apt-get install autoconf-archive -y
+           sudo apt-get install pkg-config -y
            sudo apt-get install libicu-dev libcurl4-openssl-dev -y
            sudo apt-get install liblzma-dev lzma xz-utils libbz2-dev -y
            sudo apt-get install libxapian-dev libclucene-dev -y
@@ -52,7 +53,14 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz --enable-tests CXX=${{matrix.config.cxx}} # --enable-examples
+      run: |
+           if [ "${{ runner.os }}" = "macOS" ]; then
+             BREW_PREFIX="$(brew --prefix)"
+             export CPPFLAGS="-I${BREW_PREFIX}/include ${CPPFLAGS}"
+             export LDFLAGS="-L${BREW_PREFIX}/lib ${LDFLAGS}"
+             export PKG_CONFIG_PATH="${BREW_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}"
+           fi
+           ./configure --with-cxx11regex --with-cxx11time --with-bzip2 --with-xz --enable-tests CXX=${{matrix.config.cxx}}      
     - name: make
       run: CXX=${{matrix.config.cxx}} make # -j 4
     - name: install
