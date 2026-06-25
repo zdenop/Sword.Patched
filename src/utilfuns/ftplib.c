@@ -21,7 +21,6 @@
 /***************************************************************************/
 // changes made by Lorn Potter <llornkcor@handhelds.org>
 // 
-#include <netdb.h>
 
 #if defined(_WIN32)
 /* Windows (MinGW, MSVC, etc.) */
@@ -45,6 +44,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#if !defined(_WIN32)  // mingw
+#include <netdb.h>
+#endif
 
 #elif defined(VMS)
 #include <types.h>
