@@ -28,16 +28,16 @@
 #endif
 
 
-#if defined(__unix__) || defined(VMS)
-#define GLOBALDEF
-#define GLOBALREF extern
-#elif defined(_WIN32)
+#if defined(_WIN32)
 #if defined BUILDING_LIBRARY
 #define GLOBALDEF __declspec(dllexport)
 #define GLOBALREF __declspec(dllexport)
 #else
 #define GLOBALREF __declspec(dllimport)
 #endif
+#elif defined(__unix__) || defined(VMS)
+#define GLOBALDEF
+#define GLOBALREF extern
 #endif
 
 /* FtpAccess() type codes */
