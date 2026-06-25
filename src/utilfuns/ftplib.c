@@ -22,6 +22,7 @@
 // changes made by Lorn Potter <llornkcor@handhelds.org>
 // 
 
+#include <stdio.h>  // MinGW-w64 
 #if defined(_WIN32)
 /* Windows (MinGW, MSVC, etc.) */
 #include <winsock2.h>
@@ -31,7 +32,6 @@
 #ifndef socklen_t
 #define socklen_t int
 #endif
-
 #else /* not _WIN32 */
 
 #if defined(__unix__) || defined(__VMS)
