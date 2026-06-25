@@ -21,13 +21,13 @@
 /***************************************************************************/
 // changes made by Lorn Potter <llornkcor@handhelds.org>
 // 
+#include <netdb.h>
 
 #if defined(_WIN32)
-
 /* Windows (MinGW, MSVC, etc.) */
-#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <windows.h>
 
 #ifndef socklen_t
 #define socklen_t int
@@ -35,7 +35,6 @@
 
 #if defined(__unix__) || defined(__VMS)
 #include <unistd.h>
-#include <netdb.h>
 #endif
 
 #if defined(__unix__)
