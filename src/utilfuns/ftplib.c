@@ -23,6 +23,9 @@
 // 
 
 #include <stdio.h>  // MinGW-w64 
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #if defined(_WIN32)
 /* Windows (MinGW, MSVC, etc.) */
 #include <winsock2.h>
@@ -594,7 +597,7 @@ GLOBALDEF int FtpConnect(const char *host, netbuf **nControl)
  *
  * returns 1 if successful, 0 on error
  */
-GLOBALDEF int FtpOptions(int opt, long val, netbuf *nControl)
+GLOBALDEF int FtpOptions(int opt, intptr_t val, netbuf *nControl)
 {
     int v,rv=0;
     switch (opt)

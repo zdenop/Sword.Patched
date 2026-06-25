@@ -155,18 +155,18 @@ SWLOGD("getting file %s to %s\n", sourcePath.c_str(), destBuf ? "*internal buffe
 	pd.totalSize = 0;
 	int fd = 0;
 	if (destBuf) {
-		FtpOptions(FTPLIB_CALLBACK_WRITER, (long)&my_swbufwriter, ftpConnection);
-		FtpOptions(FTPLIB_CALLBACK_WRITERARG, (long)destBuf, ftpConnection);
+		FtpOptions(FTPLIB_CALLBACK_WRITER, (intptr_t)&my_swbufwriter, ftpConnection);
+		FtpOptions(FTPLIB_CALLBACK_WRITERARG, (intptr_t)destBuf, ftpConnection);
 	}
 	else {
 		fd = FileMgr::createPathAndFile(outFile);
-		FtpOptions(FTPLIB_CALLBACK_WRITER, (long)&my_filewriter, ftpConnection);
-		FtpOptions(FTPLIB_CALLBACK_WRITERARG, (long)&fd, ftpConnection);
+		FtpOptions(FTPLIB_CALLBACK_WRITER, (intptr_t)&my_filewriter, ftpConnection);
+		FtpOptions(FTPLIB_CALLBACK_WRITERARG, (intptr_t)&fd, ftpConnection);
 	}
 
-	FtpOptions(FTPLIB_CALLBACK, (long)&my_fprogress, ftpConnection);
-	FtpOptions(FTPLIB_CALLBACKARG, (long)&pd, ftpConnection);
-	FtpOptions(FTPLIB_CALLBACKBYTES, (long)2048, ftpConnection);
+	FtpOptions(FTPLIB_CALLBACK, (intptr_t)&my_fprogress, ftpConnection);
+	FtpOptions(FTPLIB_CALLBACKARG, (intptr_t)&pd, ftpConnection);
+	FtpOptions(FTPLIB_CALLBACKBYTES, (intptr_t)2048, ftpConnection);
 
 	if (sourcePath.endsWith("/") || sourcePath.endsWith("\\")) {
 //SWLOGD("getting test directory %s\n", sourcePath.c_str());
@@ -189,4 +189,3 @@ SWLOGD("FTPLibFTPTransport - returning: %d\n", retVal);
 
 
 SWORD_NAMESPACE_END
-

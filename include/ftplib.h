@@ -27,6 +27,8 @@
 #define _FTPLIB_NO_COMPAT
 #endif
 
+#include <stdint.h>
+
 
 #if defined(_WIN32)
 #if defined BUILDING_LIBRARY
@@ -98,7 +100,7 @@ GLOBALREF int ftplib_debug;
 GLOBALREF void FtpInit(void);
 GLOBALREF char *FtpLastResponse(netbuf *nControl);
 GLOBALREF int FtpConnect(const char *host, netbuf **nControl);
-GLOBALREF int FtpOptions(int opt, long val, netbuf *nControl);
+GLOBALREF int FtpOptions(int opt, intptr_t val, netbuf *nControl);
 GLOBALREF int FtpLogin(const char *user, const char *pass, netbuf *nControl);
 GLOBALREF int FtpAccess(const char *path, int typ, int mode, netbuf *nControl, netbuf **nData);
 GLOBALREF int FtpRead(void *buf, int max, netbuf *nData);
