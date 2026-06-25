@@ -32,6 +32,8 @@
 #define socklen_t int
 #endif
 
+#else /* not _WIN32 */
+
 #if defined(__unix__) || defined(__VMS)
 #include <unistd.h>
 #endif
@@ -44,10 +46,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#if !defined(_WIN32)  // mingw
 #include <netdb.h>
-#endif
 
 #elif defined(VMS)
 #include <types.h>
@@ -55,6 +54,8 @@
 #include <in.h>
 #include <inet.h>
 #endif
+
+#endif /* _WIN32 */
 
 #define BUILDING_LIBRARY
 #include "ftplib.h"
