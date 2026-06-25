@@ -113,7 +113,7 @@ void RawStr4::getIDXBufDat(long ioffset, char **buf) const
 {
 	int size;
 	char ch;
-	if ((unsigned long)datfd > 0) {
+	if (datfd && datfd->getFd() >= 0) {
 		datfd->seek(ioffset, SEEK_SET);
 		for (size = 0; datfd->read(&ch, 1) == 1; size++) {
 			if ((ch == '\\') || (ch == 10) || (ch == 13))
@@ -147,7 +147,7 @@ void RawStr4::getIDXBuf(long ioffset, char **buf) const
 {
 	SW_u32 offset;
 	
-	if ((unsigned long)idxfd > 0) {
+	if (idxfd && idxfd->getFd() >= 0) {
 		idxfd->seek(ioffset, SEEK_SET);
 
 		idxfd->read(&offset, 4);
