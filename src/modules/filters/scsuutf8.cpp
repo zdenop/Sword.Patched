@@ -29,6 +29,7 @@
  * in http://www.unicode.org/unicode/reports/tr6.html
  */
 
+#include <stdint.h>
 #include <scsuutf8.h>
 #include <swbuf.h>
 #ifdef _ICU_
@@ -139,7 +140,7 @@ int SCSUUTF8::UTF8Output(unsigned long uchar, SWBuf* utf8Buf)
 #endif
 
 char SCSUUTF8::processText(SWBuf &text, const SWKey *key, const SWModule *module) {
-	if ((unsigned long)key < 2)	// hack, we're en(1)/de(0)ciphering
+	if ((uintptr_t)key < 2)	// hack, we're en(1)/de(0)ciphering
 		return -1;
 	
 #ifdef _ICU_

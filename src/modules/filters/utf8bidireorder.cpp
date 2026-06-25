@@ -25,6 +25,7 @@
 #ifdef _ICU_
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <utilstr.h>
 
@@ -50,7 +51,7 @@ UTF8BiDiReorder::~UTF8BiDiReorder() {
 char UTF8BiDiReorder::processText(SWBuf &text, const SWKey *key, const SWModule *module)
 {
         UChar *ustr, *ustr2;
-	if ((unsigned long)key < 2)	// hack, we're en(1)/de(0)ciphering
+	if ((uintptr_t)key < 2)	// hack, we're en(1)/de(0)ciphering
 		return -1;
         
         int32_t len = text.length();

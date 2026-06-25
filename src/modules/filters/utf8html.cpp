@@ -22,6 +22,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <utf8html.h>
 #include <swbuf.h>
 
@@ -38,7 +39,7 @@ char UTF8HTML::processText(SWBuf &text, const SWKey *key, const SWModule *module
 	unsigned char *from;
         char digit[10];
         unsigned long ch;
-	 if ((unsigned long)key < 2)	// hack, we're en(1)/de(0)ciphering
+	 if ((uintptr_t)key < 2)	// hack, we're en(1)/de(0)ciphering
 		return (char)-1;
 
 	SWBuf orig = text;

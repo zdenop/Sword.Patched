@@ -23,6 +23,7 @@
 
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <cipherfil.h>
 #include <swcipher.h>
 #include <swbuf.h>
@@ -56,7 +57,7 @@ char CipherFilter::processText(SWBuf &text, const SWKey *key, const SWModule *mo
 			text.setSize(len + 5);
 			memcpy(text.getRawData(), cipher->getUncipheredBuf(), len);
 		}
-		else if ((unsigned long)key == 1) {
+		else if ((uintptr_t)key == 1) {
 			cipher->setUncipheredBuf(text.getRawData(), len);
 			cipher->getCipheredBuf(&len);
 			text.setSize(len + 5);

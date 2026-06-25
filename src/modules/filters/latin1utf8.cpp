@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <latin1utf8.h>
 #include <swmodule.h>
 
@@ -38,7 +39,7 @@ char Latin1UTF8::processText(SWBuf &text, const SWKey *key, const SWModule *modu
 {
     const unsigned char *from;
 
-	if ((unsigned long)key < 2)	// hack, we're en(1)/de(0)ciphering
+	if ((uintptr_t)key < 2)	// hack, we're en(1)/de(0)ciphering
 		return (char)-1;
 
 	SWBuf orig = text;
@@ -50,130 +51,130 @@ char Latin1UTF8::processText(SWBuf &text, const SWKey *key, const SWModule *modu
 	  }
 	  else if (*from < 0xc0) {
                 switch(*from) {
-        	case 0x80: // '€'
-	        	text += 0xe2; // 'â'
-		        text += 0x82; // '‚'
-        		text += 0xac; // '¬'
+        	case 0x80: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x82; // 'ï¿½'
+        		text += 0xac; // 'ï¿½'
 	        	break;
-        	case 0x82: // '‚'
-	        	text += 0xe2; // 'â'
-		        text += 0x80; // '€'
-        		text += 0x9a; // 'š'
+        	case 0x82: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x80; // 'ï¿½'
+        		text += 0x9a; // 'ï¿½'
 	        	break;
-        	case 0x83: // 'ƒ'
-	        	text += 0xc6; // 'Æ'
-		        text += 0x92; // '’'
+        	case 0x83: // 'ï¿½'
+	        	text += 0xc6; // 'ï¿½'
+		        text += 0x92; // 'ï¿½'
         		break;
-	        case 0x84: // '„'
-		        text += 0xe2; // 'â'
-        		text += 0x80; // '€'
-	        	text += 0x9e; // 'ž'
+	        case 0x84: // 'ï¿½'
+		        text += 0xe2; // 'ï¿½'
+        		text += 0x80; // 'ï¿½'
+	        	text += 0x9e; // 'ï¿½'
 		        break;
-        	case 0x85: // '…'
-	        	text += 0xe2; // 'â'
-		        text += 0x80; // '€'
-        		text += 0xa6; // '¦'
+        	case 0x85: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x80; // 'ï¿½'
+        		text += 0xa6; // 'ï¿½'
 	        	break;
-        	case 0x86: // '†'
-        		text += 0xe2; // 'â'
-	        	text += 0x80; // '€'
-		        text += 0xa0; // ' '
+        	case 0x86: // 'ï¿½'
+        		text += 0xe2; // 'ï¿½'
+	        	text += 0x80; // 'ï¿½'
+		        text += 0xa0; // 'ï¿½'
         		break;
-	        case 0x87: // '‡'
-		        text += 0xe2; // 'â'
-        		text += 0x80; // '€'
-	        	text += 0xa1; // '¡'
+	        case 0x87: // 'ï¿½'
+		        text += 0xe2; // 'ï¿½'
+        		text += 0x80; // 'ï¿½'
+	        	text += 0xa1; // 'ï¿½'
 		        break;
-        	case 0x88: // 'ˆ'
-	        	text += 0xcb; // 'Ë'
-		        text += 0x86; // '†'
+        	case 0x88: // 'ï¿½'
+	        	text += 0xcb; // 'ï¿½'
+		        text += 0x86; // 'ï¿½'
         		break;
-	        case 0x89: // '‰'
-		        text += 0xe2; // 'â'
-        		text += 0x80; // '€'
-	        	text += 0xb0; // '°'
+	        case 0x89: // 'ï¿½'
+		        text += 0xe2; // 'ï¿½'
+        		text += 0x80; // 'ï¿½'
+	        	text += 0xb0; // 'ï¿½'
 		        break;
-        	case 0x8A: // 'Š'
-	        	text += 0xc5; // 'Å'
-		        text += 0xa0; // ' '
+        	case 0x8A: // 'ï¿½'
+	        	text += 0xc5; // 'ï¿½'
+		        text += 0xa0; // 'ï¿½'
         		break;
-	        case 0x8B: // '‹'
-		        text += 0xe2; // 'â'
-        		text += 0x80; // '€'
-	        	text += 0xb9; // '¹'
+	        case 0x8B: // 'ï¿½'
+		        text += 0xe2; // 'ï¿½'
+        		text += 0x80; // 'ï¿½'
+	        	text += 0xb9; // 'ï¿½'
 		        break;
-        	case 0x8C: // 'Œ'
-	        	text += 0xc5; // 'Å'
-		        text += 0x92; // '’'
+        	case 0x8C: // 'ï¿½'
+	        	text += 0xc5; // 'ï¿½'
+		        text += 0x92; // 'ï¿½'
         		break;
-	        case 0x8E: // 'Ž'
-		        text += 0xc5; // 'Å'
-        		text += 0xbd; // '½'
+	        case 0x8E: // 'ï¿½'
+		        text += 0xc5; // 'ï¿½'
+        		text += 0xbd; // 'ï¿½'
 	        	break;
-        	case 0x91: // '‘'
-        		text += 0xe2; // 'â'
-	        	text += 0x80; // '€'
-		        text += 0x98; // '˜'
+        	case 0x91: // 'ï¿½'
+        		text += 0xe2; // 'ï¿½'
+	        	text += 0x80; // 'ï¿½'
+		        text += 0x98; // 'ï¿½'
         		break;
-	        case 0x92: // '’'
-		        text += 0xe2; // 'â'
-        		text += 0x80; // '€'
-	        	text += 0x99; // '™'
+	        case 0x92: // 'ï¿½'
+		        text += 0xe2; // 'ï¿½'
+        		text += 0x80; // 'ï¿½'
+	        	text += 0x99; // 'ï¿½'
 		        break;
-        	case 0x93: // '“'
-	        	text += 0xe2; // 'â'
-		        text += 0x80; // '€'
-        		text += 0x9c; // 'œ'
+        	case 0x93: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x80; // 'ï¿½'
+        		text += 0x9c; // 'ï¿½'
 	        	break;
-        	case 0x94: // '”'
-	        	text += 0xe2; // 'â'
-		        text += 0x80; // '€'
-        		text += 0x9d; // ''
+        	case 0x94: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x80; // 'ï¿½'
+        		text += 0x9d; // 'ï¿½'
 	        	break;
-        	case 0x95: // '•'
-	        	text += 0xe2; // 'â'
-		        text += 0x80; // '€'
-        		text += 0xa2; // '¢'
+        	case 0x95: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x80; // 'ï¿½'
+        		text += 0xa2; // 'ï¿½'
 	        	break;
-        	case 0x96: // '–'
-	        	text += 0xe2; // 'â'
-		        text += 0x80; // '€'
-        		text += 0x93; // '“'
+        	case 0x96: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x80; // 'ï¿½'
+        		text += 0x93; // 'ï¿½'
 	        	break;
-        	case 0x97: // '—'
-	        	text += 0xe2; // 'â'
-		        text += 0x80; // '€'
-        		text += 0x94; // '”'
+        	case 0x97: // 'ï¿½'
+	        	text += 0xe2; // 'ï¿½'
+		        text += 0x80; // 'ï¿½'
+        		text += 0x94; // 'ï¿½'
 	        	break;
-        	case 0x98: // '˜'
-	        	text += 0xcb; // 'Ë'
-		        text += 0x9c; // 'œ'
+        	case 0x98: // 'ï¿½'
+	        	text += 0xcb; // 'ï¿½'
+		        text += 0x9c; // 'ï¿½'
         		break;
-	        case 0x99: // '™'
-		        text += 0xe2; // 'â'
-        		text += 0x84; // '„'
-	        	text += 0xa2; // '¢'
+	        case 0x99: // 'ï¿½'
+		        text += 0xe2; // 'ï¿½'
+        		text += 0x84; // 'ï¿½'
+	        	text += 0xa2; // 'ï¿½'
 		        break;
-        	case 0x9A: // 'š'
-	        	text += 0xc5; // 'Å'
-		        text += 0xa1; // '¡'
+        	case 0x9A: // 'ï¿½'
+	        	text += 0xc5; // 'ï¿½'
+		        text += 0xa1; // 'ï¿½'
         		break;
-	        case 0x9B: // '›'
-		        text += 0xe2; // 'â'
-        		text += 0x80; // '€'
-	        	text += 0xba; // 'º'
+	        case 0x9B: // 'ï¿½'
+		        text += 0xe2; // 'ï¿½'
+        		text += 0x80; // 'ï¿½'
+	        	text += 0xba; // 'ï¿½'
 		        break;
-        	case 0x9C: // 'œ'
-	        	text += 0xc5; // 'Å'
-		        text += 0x93; // '“'
+        	case 0x9C: // 'ï¿½'
+	        	text += 0xc5; // 'ï¿½'
+		        text += 0x93; // 'ï¿½'
         		break;
-	        case 0x9E: // 'ž'
-		        text += 0xc5; // 'Å'
-        		text += 0xbe; // '¾'
+	        case 0x9E: // 'ï¿½'
+		        text += 0xc5; // 'ï¿½'
+        		text += 0xbe; // 'ï¿½'
 	        	break;
-        	case 0x9F: // 'Ÿ'
-	        	text += 0xc5; // 'Å'
-		        text += 0xb8; // '¸'
+        	case 0x9F: // 'ï¿½'
+	        	text += 0xc5; // 'ï¿½'
+		        text += 0xb8; // 'ï¿½'
         		break;
                 default:
                         text += 0xC2;

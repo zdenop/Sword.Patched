@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <latin1utf16.h>
 #include <swbuf.h>
 
@@ -34,7 +35,7 @@ Latin1UTF16::Latin1UTF16() {
 
 char Latin1UTF16::processText(SWBuf &text, const SWKey *key, const SWModule *module) {
     const unsigned char *from;
-	 if ((unsigned long)key < 2)	// hack, we're en(1)/de(0)ciphering
+	 if ((uintptr_t)key < 2)	// hack, we're en(1)/de(0)ciphering
 		return (char)-1;
    
     
@@ -44,85 +45,85 @@ char Latin1UTF16::processText(SWBuf &text, const SWKey *key, const SWModule *mod
 	for (text = ""; *from; from++) {
 		text.setSize(text.size()+2);
 	   switch (*from) {
-	case 0x80: // '€'
+	case 0x80: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x20AC;
 		break;
-	case 0x82: // '‚'
+	case 0x82: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x201A;
 		break;
-	case 0x83: // 'ƒ'
+	case 0x83: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x0192;
 		break;
-	case 0x84: // '„'
+	case 0x84: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x201E;
 		break;
-	case 0x85: // '…'
+	case 0x85: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2026;
 		break;
-	case 0x86: // '†'
+	case 0x86: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2020;
 		break;
-	case 0x87: // '‡'
+	case 0x87: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2021;
 		break;
-	case 0x88: // 'ˆ'
+	case 0x88: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x02C6;
 		break;
-	case 0x89: // '‰'
+	case 0x89: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2030;
 		break;
-	case 0x8A: // 'Š'
+	case 0x8A: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x0160;
 		break;
-	case 0x8B: // '‹'
+	case 0x8B: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2039;
 		break;
-	case 0x8C: // 'Œ'
+	case 0x8C: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x0152;
 		break;
-	case 0x8E: // 'Ž'
+	case 0x8E: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x017D;
 		break;
-	case 0x91: // '‘'
+	case 0x91: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2018;
 		break;
-	case 0x92: // '’'
+	case 0x92: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2019;
 		break;
-	case 0x93: // '“'
+	case 0x93: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x201C;
 		break;
-	case 0x94: // '”'
+	case 0x94: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x201D;
 		break;
-	case 0x95: // '•'
+	case 0x95: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2022;
 		break;
-	case 0x96: // '–'
+	case 0x96: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2013;
 		break;
-	case 0x97: // '—'
+	case 0x97: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2014;
 		break;
-	case 0x98: // '˜'
+	case 0x98: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x02DC;
 		break;
-	case 0x99: // '™'
+	case 0x99: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x2122;
 		break;
-	case 0x9A: // 'š'
+	case 0x9A: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x0161;
 		break;
-	case 0x9B: // '›'
+	case 0x9B: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x203A;
 		break;
-	case 0x9C: // 'œ'
+	case 0x9C: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x0153;
 		break;
-	case 0x9E: // 'ž'
+	case 0x9E: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x017E;
 		break;
-	case 0x9F: // 'Ÿ'
+	case 0x9F: // 'ï¿½'
 		*((unsigned short *)(text.getRawData()+(text.size()-2))) = (unsigned short) 0x0178;
 		break;
 	   default:
