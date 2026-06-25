@@ -37,10 +37,7 @@
 #define WIN32
 #endif
 
-#if defined(WIN32) && !defined(_WIN32_WCE)
-#include <io.h>
-#include <direct.h>
-#elif !defined(__GNUC__)
+#if (defined(WIN32) && !defined(_WIN32_WCE)) || !defined(__GNUC__)
 #include <io.h>
 #include <direct.h>
 #else
@@ -706,4 +703,3 @@ SWBuf FileMgr::getHomeDir() {
 
 
 SWORD_NAMESPACE_END
-
