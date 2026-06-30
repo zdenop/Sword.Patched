@@ -10,4 +10,4 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    - uses: ilammy/setup-nasm@v1.5    
+    - uses: ilammy/setup-nasm@v1.5.2
