@@ -1,4 +1,4 @@
-name: CMake on Linux & MacOS
+name: nasm.test
 
 on:
   workflow_dispatch:
