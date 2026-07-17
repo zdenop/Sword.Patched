@@ -23,11 +23,8 @@ permissions:
   actions: read
   
 env:
-  # Path to the CMake build directory.
-  build: '${{ github.workspace }}/build'
   BUILD_TYPE: Release
-  # Use GitHub Actions cache as vcpkg binary cache to speed up rebuilds
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-cache
 
 jobs:
   analyze:
@@ -58,17 +55,26 @@ jobs:
       # Caches the manifest-installed packages.
       # Cache key changes automatically when vcpkg.json changes.
       #
-      - name: Cache vcpkg installed packages
+      - name: Cache vcpkg installed
         uses: actions/cache@v4
         with:
           path: |
-            ${{ github.workspace }}\vcpkg_installed
-            ${{ github.workspace }}\build\vcpkg_installed
+            build/vcpkg_installed
+            ${{ env.VCPKG_ROOT }}/downloads
+            ${{ env.VCPKG_ROOT }}/packages
+            ${{ env.VCPKG_ROOT }}/buildtrees            
+            .vcpkg-cache
           key: >
-            vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            vcpkg-${{ runner.os }}-
+              vcpkg-${{ runner.os }}-
+              ${{ hashFiles('vcpkg.json',
+                'vcpkg-configuration.json',
+                '**/CMakeLists.txt') }}
 
+      - name: Show vcpkg cache status
+        shell: pwsh
+        run: |
+          echo "VCPKG_BINARY_SOURCES=$env:VCPKG_BINARY_SOURCES"
+    
       - name: Configure CMake
         shell: pwsh
         run: |
