@@ -1,9 +1,6 @@
 {
-  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "my-cpp-project",
-  "version-string": "1.0.0",
-  "builtin-baseline": "cb2981c4e03d421fa03b9bb5044cd1986180e7e4",
-  "description": "C++ project depending on zlib, bzip2, xapian, curl, icu",
+  "name": "sword-patched",
+  "version-string": "0.1.0",
   "dependencies": [
     "zlib",
     "bzip2",
