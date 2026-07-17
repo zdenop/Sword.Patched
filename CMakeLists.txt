@@ -82,22 +82,31 @@ INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/muxsources.cmake)
 # I want to do this manually, there might be reason in the future
 SET(CPPCHECK_POSSIBLEERROR_ARG "--enable=all")
 IF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Shared.*" OR NOT LIBSWORD_LIBRARY_TYPE)
-	ADD_LIBRARY(sword SHARED ${sword_SOURCES})
+	ADD_LIBRARY(sword_shared SHARED ${sword_SOURCES})
     if(SWORD_ENABLE_CPPCHECK)
 	    ADD_CPPCHECK(sword
 	        POSSIBLE_ERROR TRUE
 	        FORCE TRUE)
 	endif()
 	MESSAGE(STATUS "Building Shared library.")
+	SET_TARGET_PROPERTIES(sword_shared PROPERTIES OUTPUT_NAME sword)
+	IF(MSVC)
+		SET_TARGET_PROPERTIES(sword_shared PROPERTIES
+  			ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/shared" # import .lib on Windows
+  			RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+		)
+	ENDIF(MSVC)
 	SET(BUILDING_SHARED 1)
 	SET(SWORD_LINK_NAME sword)
 ENDIF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Shared.*" OR NOT LIBSWORD_LIBRARY_TYPE)
 
 IF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Static.*" OR NOT LIBSWORD_LIBRARY_TYPE)
 	ADD_LIBRARY(sword_static STATIC ${sword_SOURCES})
-    ADD_CPPCHECK(sword_static
-        POSSIBLE_ERROR TRUE
-        FORCE TRUE)
+    if(SWORD_ENABLE_CPPCHECK)	
+    	ADD_CPPCHECK(sword_static
+	        POSSIBLE_ERROR TRUE
+        	FORCE TRUE)
+	endif()
 	SET_TARGET_PROPERTIES(sword_static PROPERTIES COMPILE_FLAGS "-fPIC")
 	SET(BUILDING_STATIC 1)
 	# Defaults to linking against the shared if it is also being built
@@ -108,6 +117,10 @@ IF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Static.*" OR NOT LIBSWORD_LIBRARY_TYPE)
 	# with the exported symbols.  Thus, we don't want the two to have the
 	# same exact name.  In other systems, the .a and .so suffixes suffice
 	# to keep them separate
+	SET_TARGET_PROPERTIES(sword_static PROPERTIES
+ 		 ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/static"
+	)
+	SET_TARGET_PROPERTIES(sword_static PROPERTIES OUTPUT_NAME sword_static)		
 	IF(NOT MSVC OR NOT LIBSWORD_LIBRARY_TYPE MATCHES ".*Shared.*")
 		SET_TARGET_PROPERTIES(sword_static PROPERTIES
 			OUTPUT_NAME "sword")
@@ -118,6 +131,11 @@ IF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Static.*" OR NOT LIBSWORD_LIBRARY_TYPE)
 	ENDIF(NOT MSVC OR NOT LIBSWORD_LIBRARY_TYPE MATCHES ".*Shared.*")
 	MESSAGE(STATUS "Building Static library.")
 ENDIF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Static.*" OR NOT LIBSWORD_LIBRARY_TYPE)
+
+# Check for accidental duplicate target definitions:
+if(NOT TARGET sword)
+  add_library(sword STATIC ${SOURCES})
+endif()
 
 ################################################################################################
 # Some random user settings
