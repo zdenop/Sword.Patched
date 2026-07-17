@@ -132,11 +132,6 @@ IF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Static.*" OR NOT LIBSWORD_LIBRARY_TYPE)
 	MESSAGE(STATUS "Building Static library.")
 ENDIF(LIBSWORD_LIBRARY_TYPE MATCHES ".*Static.*" OR NOT LIBSWORD_LIBRARY_TYPE)
 
-# Check for accidental duplicate target definitions:
-if(NOT TARGET sword)
-  add_library(sword STATIC ${SOURCES})
-endif()
-
 ################################################################################################
 # Some random user settings
 #
@@ -157,9 +152,9 @@ ELSE(NOT LIBSWORD_SOVERSION AND BUILDING_SHARED)
 ENDIF(NOT LIBSWORD_SOVERSION AND BUILDING_SHARED)
 
 IF(BUILDING_SHARED)
-	SET_TARGET_PROPERTIES(sword
-		PROPERTIES SOVERSION ${SWORD_SOVERSION})
-	MESSAGE(STATUS "Setting SOVERSION to ${SWORD_SOVERSION}")
+  SET_TARGET_PROPERTIES(sword_shared
+    PROPERTIES SOVERSION ${SWORD_SOVERSION})
+  MESSAGE(STATUS "Setting SOVERSION to ${SWORD_SOVERSION}")
 ENDIF(BUILDING_SHARED)
 
 ###############################################################################################
@@ -285,7 +280,7 @@ elseif(XAPIAN_FOUND)
     list(APPEND SWORD_LINK_LIBRARIES ${XAPIAN_LIBRARIES})
 endif()
 IF(BUILDING_SHARED)
-	TARGET_LINK_LIBRARIES(sword ${SWORD_LINK_LIBRARIES})
+	TARGET_LINK_LIBRARIES(sword_shared  ${SWORD_LINK_LIBRARIES})
 ENDIF(BUILDING_SHARED)
 
 IF(BUILDING_STATIC)
@@ -317,7 +312,7 @@ ADD_EXECUTABLE(buildtest buildtest.cpp)
 IF(BUILDING_STATIC)
 	TARGET_LINK_LIBRARIES(buildtest sword_static)
 ELSE(BUILDING_STATIC)
-	TARGET_LINK_LIBRARIES(buildtest sword)
+	TARGET_LINK_LIBRARIES(buildtest sword_shared)
 ENDIF(BUILDING_STATIC)
 
 ##############################################################################################
