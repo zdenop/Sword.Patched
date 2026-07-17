@@ -60,9 +60,7 @@ jobs:
 
       - name: Install dependencies via vcpkg
         run: |
-          & "$env:VCPKG_ROOT/vcpkg.exe" install `
-            zlib bzip2 xapian curl icu `
-            --triplet x64-windows
+          & "$env:VCPKG_ROOT/vcpkg.exe" install --triplet x64-windows
 
       - name: Configure CMake
         run: |
