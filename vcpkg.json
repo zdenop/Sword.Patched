@@ -10,6 +10,5 @@
     "xapian",
     "curl",
     "icu"
-  ],
-  "builtin-baseline": "2024-07-10"
+  ]
 }
