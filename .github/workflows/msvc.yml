@@ -62,19 +62,24 @@ jobs:
         run: |
           & "$env:VCPKG_ROOT/vcpkg.exe" install --triplet x64-windows
 
-      - name: Configure CMake
+      # - name: Configure CMake
+        # run: |
+          # cmake -B build -S . `
+            # -G "Visual Studio 17 2022" -A x64 `
+            # -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            # -DVCPKG_TARGET_TRIPLET=x64-windows `
+
+      - name: Configure CMake Ninja
         run: |
           cmake -B build -S . `
-            -G "Visual Studio 17 2022" -A x64 `
+            -G "Ninja" `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -DVCPKG_TARGET_TRIPLET=x64-windows `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-            
-      # - name: Configure CMake
-        # run: cmake -B ${{ env.build }}
 
       - name: Build
-        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+        run: cmake --build build --parallel
+        # run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
 
       # - name: Run tests
         # run: |
