@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "my-cpp-project",
+  "version-string": "1.0.0",
+  "description": "C++ project depending on zlib, bzip2, xapian, curl, icu",
+  "dependencies": [
+    "zlib",
+    "bzip2",
+    "xapian",
+    "curl",
+    "icu"
+  ],
+  "builtin-baseline": "2024-07-10"
+}
