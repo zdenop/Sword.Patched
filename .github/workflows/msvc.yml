@@ -20,6 +20,9 @@ on:
 env:
   # Path to the CMake build directory.
   build: '${{ github.workspace }}/build'
+  BUILD_TYPE: Release
+  # Use GitHub Actions cache as vcpkg binary cache to speed up rebuilds
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
 permissions:
   contents: read
@@ -37,12 +40,63 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Configure CMake
-        run: cmake -B ${{ env.build }}
+      # Required for the `x-gha` binary cache backend
+      - name: Export GitHub Actions cache env
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
+      - name: Setup MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Show vcpkg version
+        run: |
+          echo "VCPKG_ROOT=$env:VCPKG_ROOT"
+          & "$env:VCPKG_ROOT/vcpkg.exe" --version
+
+      - name: Install dependencies via vcpkg
+        run: |
+          & "$env:VCPKG_ROOT/vcpkg.exe" install `
+            zlib bzip2 xapian curl icu `
+            --triplet x64-windows
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . `
+            -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+            
+      # - name: Configure CMake
+        # run: cmake -B ${{ env.build }}
+
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+      # - name: Run tests
+        # run: |
+          # cd build
+          # ctest -C ${{ env.BUILD_TYPE }} --output-on-failure
+          
       # Build is not required unless generated source files are used
       # - name: Build CMake
       #   run: cmake --build ${{ env.build }}
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            build/*.exe
+            build/**/*.dll
+            build/**/*.pdb
+          if-no-files-found: ignore
 
       - name: Initialize MSVC Code Analysis
         uses: microsoft/msvc-code-analysis-action@04825f6d9e00f87422d6bf04e1a38b1f3ed60d99
