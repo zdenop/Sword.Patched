@@ -65,7 +65,6 @@ jobs:
         uses: actions/cache@v6
         with:
           path: |
-            build/vcpkg_installed
             ${{ env.VCPKG_ROOT }}/downloads
             ${{ env.VCPKG_ROOT }}/packages
             ${{ env.VCPKG_ROOT }}/buildtrees
