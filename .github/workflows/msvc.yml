@@ -80,6 +80,21 @@ jobs:
         shell: pwsh
         run: |
           echo "VCPKG_BINARY_SOURCES=$env:VCPKG_BINARY_SOURCES"
+
+      - name: Install vcpkg dependencies (manifest)
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_ROOT\vcpkg.exe" install `
+            --triplet x64-windows `
+            --clean-after-build `
+            --x-manifest-root "$PWD"
+
+      - name: Verify xapian library exists
+        shell: pwsh
+        run: |
+          if (!(Test-Path "build/vcpkg_installed/x64-windows/lib/libxapian.dll.lib")) {
+            Write-Error "xapian import library not found"
+          }
     
       - name: Configure CMake
         shell: pwsh
@@ -91,6 +106,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DVCPKG_MANIFEST_MODE=ON `
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Build
