@@ -55,7 +55,8 @@ FIND_PACKAGE(XZ)
 FIND_PACKAGE(ICU COMPONENTS data i18n io uc in)
 FIND_PACKAGE(CURL)
 FIND_PACKAGE(CLucene)
-FIND_PACKAGE(Xapian)
+find_package(Xapian CONFIG QUIET)
+find_package(Xapian QUIET)
 FIND_PACKAGE(ZLIB)
 FIND_PACKAGE(PkgConfig)
 FIND_PACKAGE(Regex)
@@ -268,17 +269,29 @@ ENDIF(WITH_ICU)
 IF(REGEX_FOUND AND CROSS_COMPILE_MINGW32)
 	SET(SWORD_LINK_LIBRARIES ${SWORD_LINK_LIBRARIES} ${REGEX_LIBRARY})
 ENDIF(REGEX_FOUND AND CROSS_COMPILE_MINGW32)
-if(XAPIAN_PC_FOUND)  # msys2 has problem to link with xapian
-    message(STATUS "Found Xapian via pkg-config: ${XAPIAN_PC_VERSION}")
+
+# Prefer pkg-config imported target (works well when available)
+pkg_check_modules(XAPIAN_PC QUIET IMPORTED_TARGET xapian-core)
+
+if(TARGET PkgConfig::XAPIAN_PC)
+    message(STATUS "Found Xapian via pkg-config imported target")
     add_definitions(-DUSEXAPIAN)
-    # Do not append raw /mingw64/lib/libxapian*.a paths
     list(APPEND SWORD_LINK_LIBRARIES PkgConfig::XAPIAN_PC)
+
+# Fallback to CMake package imported target if provided by FindXapian/vcpkg
+elseif(TARGET Xapian::xapian)
+    message(STATUS "Found Xapian via Xapian::xapian target")
+    add_definitions(-DUSEXAPIAN)
+    list(APPEND SWORD_LINK_LIBRARIES Xapian::xapian)
+
+# Last resort: legacy variables
 elseif(XAPIAN_FOUND)
-    message(STATUS "Found Xapian via FindXapian: ${XAPIAN_LIBRARIES}")
+    message(STATUS "Found Xapian via legacy variables: ${XAPIAN_LIBRARIES}")
     include_directories(${XAPIAN_INCLUDE_DIR})
     add_definitions(-DUSEXAPIAN)
     list(APPEND SWORD_LINK_LIBRARIES ${XAPIAN_LIBRARIES})
 endif()
+
 IF(BUILDING_SHARED)
 	TARGET_LINK_LIBRARIES(sword_shared  ${SWORD_LINK_LIBRARIES})
 ENDIF(BUILDING_SHARED)
