@@ -41,11 +41,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path "${env:VCPKG_DEFAULT_BINARY_CACHE}" | Out-Null
           Write-Host "Created/verified: ${env:VCPKG_DEFAULT_BINARY_CACHE}"
 
-      - name: Setup Ninja
-        uses: seanmiddleditch/gha-setup-ninja@v6
-
       - name: Setup MSVC developer environment
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
           arch: x64
 
@@ -92,8 +89,12 @@ jobs:
       - name: Verify xapian library exists
         shell: pwsh
         run: |
-          if (!(Test-Path "build/vcpkg_installed/x64-windows/lib/libxapian.dll.lib")) {
-            Write-Error "xapian import library not found"
+          $candidates = @(
+            "vcpkg_installed/x64-windows/lib/libxapian.dll.lib",
+            "build/vcpkg_installed/x64-windows/lib/libxapian.dll.lib"
+          )
+          if (-not ($candidates | Where-Object { Test-Path $_ })) {
+            Write-Error ("xapian import library not found. Checked:`n - " + ($candidates -join "`n - "))
           }
     
       - name: Configure CMake
